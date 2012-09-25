@@ -1,0 +1,34 @@
+<html>
+<head>
+<title>Heat Map
+</title>
+
+<script src="processing-1.4.1.js" ></script>
+<script type="text/javascript" src="heatmap.js"></script>
+
+<style type="text/css">
+canvas:focus{
+	outline: none;
+}
+canvas{
+	border: 0px solid black;
+	width: auto;
+	height: auto;
+}
+#annotations{
+	border: 0px solid black;
+	width: auto;
+	height: auto;
+	position: absolute;
+	left: 300px;
+}
+</style>
+
+</head>
+<body onload="init();">
+<input id="fileInput" type="file" style="display: inline-block;"></intput></br>
+<div id="annotations"></div></br>
+<canvas id="canvas"></canvas>
+<button id="dlbutton" onclick="downloadImg();">Download</button>
+</body>
+</html>
