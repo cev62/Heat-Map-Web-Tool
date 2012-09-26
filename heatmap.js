@@ -1,10 +1,11 @@
 var inputText;
 var rawData;
-
 var annotationBox;
 var canvas;
-
 var clusterfck;
+
+var desiredDistanceFunction;
+var desiredLinkageFunction;
 
 function sketch( pjs ){
 
@@ -18,7 +19,7 @@ function sketch( pjs ){
 		rawData.initialize( parseInputData( inputText, '\t' ), 1, 2 );
 		rawData.autoSetRangeValues( 0.8 );
 		rawData.setStartCoord( 0, 50 );
-		rawData.cluster( rawData.data );
+		//rawData.cluster();
 		console.log( rawData );
 		pjs.drawMap();
 
@@ -233,41 +234,37 @@ DataSet.prototype.writeAnnotations = function(){
 	//console.log("c: " + this.mouseColumn);
 	annotationBox.innerHTML = 'Row: ' + this.mouseRow + '</br>';
 	annotationBox.innerHTML += 'Column: ' + this.mouseColumn + '</br>';
-	annotationBox.innerHTML += 'Value: ' + this.data[this.mouseRow][this.mouseColumn] + '</br>';
+	annotationBox.innerHTML += 'Value: ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
 	annotationBox.innerHTML += 'Sample Name: ' + this.columnNames[this.mouseColumn] + '</br>';
 	for( var i = 0; i < this.annotations[0].length; i++ ){
-		annotationBox.innerHTML += this.annotations[0][i] + ': ' + this.annotations[this.mouseRow + 1][i] + '</br>';
+		annotationBox.innerHTML += this.annotations[0][i] + ': ' + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
 	}
 
 }
 
-DataSet.prototype.cluster = function( data ){
-	//Computes euclidean distance between two arrays, ignoring the first value of each array
-	//The first value can then be used as an id for the item
-	var euclideanDistWithId = function( input1, input2 ){
-		var output = 0.0;
-		for( var i = 1; i < input1.length; i++ ){
-			output += Math.pow( input2[i] - input1[i], 2 );
-		}
-		return Math.sqrt( output );
-	};
+DataSet.prototype.cluster = function(){
 
 	var input = [];
 	for( var i = 0; i < this.data.length; i++ ){
 		input[i] = [];
 		input[i][0] = i;
 		for( var j = 1; j <= this.data[0].length; j++ ){
-			input[i][j] = data[i][j-1];
+			input[i][j] = this.data[i][j-1];
 		}
 	}
-
-	var clusters = clusterfck.hcluster( input, euclideanDistWithId, clusterfck.AVERAGE_LINKAGE )[0];
+	var clusters = clusterfck.hcluster( input, desiredDistanceFunction, desiredLinkageFunction )[0];
 	var newData = [];
 	doClusters( clusters, newData );
 	for( var i = 0; i < this.displayOrder.length; i++ ){
 		this.displayOrder[i] = newData[i][0];
 	}
 	
+}
+
+DataSet.prototype.unCluster = function(){
+	for( var i = 0; i < this.displayOrder.length; i++ ){
+		this.displayOrder[i] = i;
+	}
 }
 
 function doClusters( cluster, output ){
@@ -285,8 +282,27 @@ function doClusters( cluster, output ){
 function init( clusterfckHandle ){
 	canvas = document.getElementById('canvas');	
 	annotationBox = document.getElementById('annotations');
+	var distanceSelect = document.getElementById('distanceSelect');
+	var linkageSelect = document.getElementById('linkageSelect');
+	
 	var processingInstance = new Processing( canvas, sketch );
 	clusterfckLocal = clusterfckHandle;
+	
+	document.getElementById('enableClusterButton').onclick = function(){ 
+		rawData.cluster();
+		rawData.drawHeatMap();
+		rawData.labelAxes(); 
+	};
+	document.getElementById('disableClusterButton').onclick = function(){ 
+		rawData.unCluster();
+		rawData.drawHeatMap();
+		rawData.labelAxes(); 
+	};
+		
+	distanceSelect.onchange = updateGuiInput;
+	linkageSelect.onchange = updateGuiInput;
+	updateGuiInput();
+	
 }
 
 function downloadImg(){
@@ -304,8 +320,37 @@ function downloadImg(){
 	window.open( canvas.toDataURL(), '_blank' );
 }
 
+var euclideanDistWithId = function( input1, input2 ){
+	var output = 0.0;
+	for( var i = 1; i < input1.length; i++ ){
+		output += Math.pow( input2[i] - input1[i], 2 );
+	}
+	return Math.sqrt( output );
+};
 
+var manhattanDistWithId = function( input1, input2 ){
+	var output = 0.0;
+	for( var i = 1; i < input1.length; i++ ){
+		output += Math.abs( input2[i] - input1[i] );
+	}
+	return output ;
+};
 
+var maximumDistWithId = function( input1, input2 ){
+	var output = 0.0;
+	for( var i = 1; i < input1.length; i++ ){
+		output = Math.max( output, Math.abs( input2[i] - input1[i] ) );
+	}
+	return output;
+};
 
+function updateGuiInput(){
 
+	desiredDistanceFunction = document.getElementById('distanceSelect').value == "maximum" ? maximumDistWithId : 
+								( document.getElementById('distanceSelect').value == "manhattan" ? manhattanDistWithId : euclideanDistWithId );
+	
+	desiredLinkageFunction = document.getElementById('linkageSelect').value == "single" ? clusterfck.SINGLE_LINKAGE : 
+								( document.getElementById('linkageSelect').value == "complete" ? clusterfck.COMPLETE_LINKAGE : clusterfck.AVERAGE_LINKAGE );
+
+}
 
