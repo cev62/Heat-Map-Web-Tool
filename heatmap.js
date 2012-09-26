@@ -1,6 +1,5 @@
 var inputText;
 var rawData;
-var cData;
 
 var annotationBox;
 var canvas;
@@ -19,10 +18,8 @@ function sketch( pjs ){
 		rawData.initialize( parseInputData( inputText, '\t' ), 1, 2 );
 		rawData.autoSetRangeValues( 0.8 );
 		rawData.setStartCoord( 0, 50 );
-		cData = rawData;
-		cData.data = cluster( cData.data );
+		rawData.cluster( rawData.data );
 		console.log( rawData );
-		console.log( cData );
 		pjs.drawMap();
 
 	};
@@ -105,9 +102,9 @@ function DataSet( pjs ){
 	this.pjs = pjs;
 
 	this.columnNames = [];
-	this.rowNames = [];
 	this.data = [];
 	this.annotations = [];
+	this.displayOrder = [];
 	
 	this.minColor = this.pjs.color( 255, 0, 0 );
 	this.midColor = this.pjs.color( 0,0,0 );
@@ -150,6 +147,7 @@ DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn )
 		this.data[ k - firstDataRow ] = [];
 		for( var l = firstDataColumn; l < values[0].length; l++ ){
 			this.data[ k - firstDataRow ][ l - firstDataColumn ] = parseFloat(values[k][l]);
+			this.displayOrder[ k - firstDataRow ] = k - firstDataRow;
 		}
 	}
 
@@ -173,7 +171,7 @@ DataSet.prototype.labelAxes = function(){
 	var numRows = this.data.length;
 	var numColumns = this.data[0].length;
 	for( var i = 0; i < numRows; i++ ){
-		this.pjs.text( this.annotations[ i + 1 ][0], this.startX + numColumns * this.cellWidth + 1, this.startY + ( i + 1 ) * this.cellHeight );
+		this.pjs.text( this.annotations[ this.displayOrder[i] + 1 ][0], this.startX + numColumns * this.cellWidth + 1, this.startY + ( i + 1 ) * this.cellHeight );
 	}
 	this.pjs.textFont( font, this.cellWidth );
 	for( var j = 0; j < numColumns; j++ ){
@@ -219,7 +217,7 @@ DataSet.prototype.drawHeatMap = function(){
 	
 	for( var r = 0; r < numRows; r++ ){
 		for( var s = 0; s < numColumns; s++ ){
-			this.pjs.fill( this.getCellColor( this.data[r][s] ) );
+			this.pjs.fill( this.getCellColor( this.data[this.displayOrder[r]][s] ) );
 			this.pjs.rect( this.startX + s * this.cellWidth, this.startY + r * this.cellHeight, this.cellWidth, this.cellHeight );
 		}
 	}
@@ -243,11 +241,52 @@ DataSet.prototype.writeAnnotations = function(){
 
 }
 
-function init( fck ){
+DataSet.prototype.cluster = function( data ){
+	//Computes euclidean distance between two arrays, ignoring the first value of each array
+	//The first value can then be used as an id for the item
+	var euclideanDistWithId = function( input1, input2 ){
+		var output = 0.0;
+		for( var i = 1; i < input1.length; i++ ){
+			output += Math.pow( input2[i] - input1[i], 2 );
+		}
+		return Math.sqrt( output );
+	};
+
+	var input = [];
+	for( var i = 0; i < this.data.length; i++ ){
+		input[i] = [];
+		input[i][0] = i;
+		for( var j = 1; j <= this.data[0].length; j++ ){
+			input[i][j] = data[i][j-1];
+		}
+	}
+
+	var clusters = clusterfck.hcluster( input, euclideanDistWithId, clusterfck.AVERAGE_LINKAGE )[0];
+	var newData = [];
+	doClusters( clusters, newData );
+	for( var i = 0; i < this.displayOrder.length; i++ ){
+		this.displayOrder[i] = newData[i][0];
+	}
+	
+}
+
+function doClusters( cluster, output ){
+	if( cluster.hasOwnProperty('left') ){
+		doClusters( cluster['left'], output );
+	}
+	if( cluster.hasOwnProperty('right') ){
+		doClusters( cluster['right'], output );
+	}
+	else{
+		output[ output.length ] = cluster['canonical'];
+	}
+}
+
+function init( clusterfckHandle ){
 	canvas = document.getElementById('canvas');	
 	annotationBox = document.getElementById('annotations');
 	var processingInstance = new Processing( canvas, sketch );
-	clusterfckLocal = fck;
+	clusterfckLocal = clusterfckHandle;
 }
 
 function downloadImg(){
@@ -265,51 +304,6 @@ function downloadImg(){
 	window.open( canvas.toDataURL(), '_blank' );
 }
 
-function cluster( data ){
-	console.log( "Start" );
-
-	var test = [
-	
-	[10,20,30],
-	[11,19,32],
-	[9, 21, 34],
-	[2,3,4],
-	[3,2,5]
-	
-	];
-
-	var clusters = clusterfck.hcluster( data, clusterfck.EUCLIDEAN_DISTANCE, clusterfck.AVERAGE_LINKAGE );
-	console.log( clusters );
-	
-	var output = [];
-	
-	output = outputCluster( clusters, output );
-	return output;
-	//console.log( "Ended" );
-}
-
-function outputCluster( clusters, output ){
-
-	console.log("left:");
-	console.log( clusters.canonical );
-
-	if( clusters.left !== null ){
-	
-		output.concat( outputCluster( clusters.left, output ) );
-	
-	}
-	if( clusters.right !== null ){
-	
-		output.concat( outputCluster( clusters.right, output ) );
-	
-	}
-	else{
-	
-		output.concat( outputCluster( clusters.canonical, output ) );
-	
-	}
-
-}
 
 
 
