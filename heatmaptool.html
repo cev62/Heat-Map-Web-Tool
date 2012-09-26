@@ -3,7 +3,8 @@
 <title>Heat Map
 </title>
 
-<script src="processing-1.4.1.js" ></script>
+<script type="text/javascript" src="processing-1.4.1.js" ></script>
+<script type="text/javascript" src="clusterfck-0.1.js" ></script>
 <script type="text/javascript" src="heatmap.js"></script>
 
 <style type="text/css">
@@ -25,10 +26,11 @@ canvas{
 </style>
 
 </head>
-<body onload="init();">
+<body onload="init(clusterfck);">
 <input id="fileInput" type="file" style="display: inline-block;"></intput></br>
 <div id="annotations"></div></br>
 <canvas id="canvas"></canvas>
 <button id="dlbutton" onclick="downloadImg();">Download</button>
+<button id="clusterbutton" onclick="cluster();">Cluster</button>
 </body>
 </html>

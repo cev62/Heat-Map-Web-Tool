@@ -1,8 +1,11 @@
 var inputText;
 var rawData;
+var cData;
 
 var annotationBox;
 var canvas;
+
+var clusterfck;
 
 function sketch( pjs ){
 
@@ -16,7 +19,10 @@ function sketch( pjs ){
 		rawData.initialize( parseInputData( inputText, '\t' ), 1, 2 );
 		rawData.autoSetRangeValues( 0.8 );
 		rawData.setStartCoord( 0, 50 );
+		cData = rawData;
+		cData.data = cluster( cData.data );
 		console.log( rawData );
+		console.log( cData );
 		pjs.drawMap();
 
 	};
@@ -237,10 +243,11 @@ DataSet.prototype.writeAnnotations = function(){
 
 }
 
-function init(){
+function init( fck ){
 	canvas = document.getElementById('canvas');	
 	annotationBox = document.getElementById('annotations');
 	var processingInstance = new Processing( canvas, sketch );
+	clusterfckLocal = fck;
 }
 
 function downloadImg(){
@@ -257,3 +264,54 @@ function downloadImg(){
 	//window.location.href = canvas.toDataURL();
 	window.open( canvas.toDataURL(), '_blank' );
 }
+
+function cluster( data ){
+	console.log( "Start" );
+
+	var test = [
+	
+	[10,20,30],
+	[11,19,32],
+	[9, 21, 34],
+	[2,3,4],
+	[3,2,5]
+	
+	];
+
+	var clusters = clusterfck.hcluster( data, clusterfck.EUCLIDEAN_DISTANCE, clusterfck.AVERAGE_LINKAGE );
+	console.log( clusters );
+	
+	var output = [];
+	
+	output = outputCluster( clusters, output );
+	return output;
+	//console.log( "Ended" );
+}
+
+function outputCluster( clusters, output ){
+
+	console.log("left:");
+	console.log( clusters.canonical );
+
+	if( clusters.left !== null ){
+	
+		output.concat( outputCluster( clusters.left, output ) );
+	
+	}
+	if( clusters.right !== null ){
+	
+		output.concat( outputCluster( clusters.right, output ) );
+	
+	}
+	else{
+	
+		output.concat( outputCluster( clusters.canonical, output ) );
+	
+	}
+
+}
+
+
+
+
+
