@@ -1,8 +1,34 @@
 var inputText;
 var rawData;
-var annotationBox;
-var canvas;
 var clusterfck;
+
+var canvas;
+var annotationBox;
+
+var distanceSelectInput;
+var linkageSelectInput;
+var showClusteredDataButton;
+var showOriginalDataButton;
+
+var dataFileUploadInput;
+var annotationFileUploadInput;
+var downloadButton;
+
+var minColorInputR;
+var minColorInputG;
+var minColorInputB;
+var midColorInputR;
+var midColorInputG;
+var midColorInputB;
+var maxColorInputR;
+var maxColorInputG;
+var maxColorInputB;
+
+var minValueInput;
+var midValueInput;
+var maxValueInput;
+var autoSetValueRangeButton;
+
 
 var desiredDistanceFunction;
 var desiredLinkageFunction;
@@ -241,6 +267,13 @@ DataSet.prototype.writeAnnotations = function(){
 	}
 
 }
+DataSet.prototype.draw = function(){
+
+	this.drawHeatMap();
+	this.writeAnnotations();
+	this.labelAxes();
+
+}
 
 DataSet.prototype.cluster = function(){
 
@@ -253,6 +286,7 @@ DataSet.prototype.cluster = function(){
 		}
 	}
 	var clusters = clusterfck.hcluster( input, desiredDistanceFunction, desiredLinkageFunction )[0];
+	console.log(clusters);
 	var newData = [];
 	doClusters( clusters, newData );
 	for( var i = 0; i < this.displayOrder.length; i++ ){
@@ -282,8 +316,46 @@ function doClusters( cluster, output ){
 function init( clusterfckHandle ){
 	canvas = document.getElementById('canvas');	
 	annotationBox = document.getElementById('annotations');
-	var distanceSelect = document.getElementById('distanceSelect');
-	var linkageSelect = document.getElementById('linkageSelect');
+
+ 	showClusteredDataButton = document.getElementById('enableClusterButton');
+	showOriginalDataButton = document.getElementById('disableClusterButton');
+	
+	dataFileUploadInput = document.getElementById('dataFileInput');
+	annotationFileUploadInput = document.getElementById('annotationFileInput');
+	downloadButton = document.getElementById('downloadButton');
+
+	minColorInputR = document.getElementById('colorLowR');
+	minColorInputR.value = '0';
+	minColorInputG = document.getElementById('colorLowG');
+	minColorInputG.value = '255';
+	minColorInputB = document.getElementById('colorLowB');
+	minColorInputB.value = '0';
+	midColorInputR = document.getElementById('colorMidR');
+	midColorInputR.value = '0';
+	midColorInputG = document.getElementById('colorMidG');
+	midColorInputG.value = '0';
+	midColorInputB = document.getElementById('colorMidB');
+	midColorInputB.value = '0';
+	maxColorInputR = document.getElementById('colorHighR');
+	maxColorInputR.value = '255';
+	maxColorInputG = document.getElementById('colorHighG');
+	maxColorInputG.value = '0';
+	maxColorInputB = document.getElementById('colorHighB');
+	maxColorInputB.value = '0';
+
+	minValueInput = document.getElementById('valueRangeMinInput');
+	midValueInput = document.getElementById('valueRangeMidInput');
+	maxValueInput = document.getElementById('valueRangeMaxInput');
+	autoSetValueRangeButton = document.getElementById('autoSetValueRangeButton');
+
+	distanceSelect = document.getElementById('distanceSelect');
+	linkageSelect = document.getElementById('linkageSelect');
+	
+	var guiElements = document.getElementsByClassName('gui');
+	for( var i = 0; i < guiElements.length; i++ ){
+		guiElements[i].onchange = updateGuiInput;
+	}
+	
 	
 	var processingInstance = new Processing( canvas, sketch );
 	clusterfckLocal = clusterfckHandle;
@@ -302,6 +374,8 @@ function init( clusterfckHandle ){
 	distanceSelect.onchange = updateGuiInput;
 	linkageSelect.onchange = updateGuiInput;
 	updateGuiInput();
+	
+	rawData.draw();
 	
 }
 
@@ -344,13 +418,56 @@ var maximumDistWithId = function( input1, input2 ){
 	return output;
 };
 
+var pearsonDistWithId = function ( input1In, input2In ){
+
+	var input1 = input1In.slice(1);
+	var input2 = input2In.slice(1);
+	var n = input1.length;
+	
+	var numerator = multiplyAndSumArrays(input1,input2) - sumArray(input1)*sumArray(input2)/n;
+	var denominator = Math.sqrt( ( sumArraySquared(input1) - sumArray(input1)*sumArray(input1)/n ) * ( sumArraySquared(input2)-sumArray(input2)*sumArray(input2)/n ) );
+
+	output = numerator / denominator;
+	return 1 / output;
+}
+
+function sumArray( input ){
+	var total = 0.0;
+	for( var i = 0; i < input.length; i++ ){
+		total += input[i];
+	}
+	return total;
+}
+
+function sumArraySquared( input ){
+	/*var total = 0.0;
+	for( var i = 0; i < input.length; i++ ){
+		total += input[i] * input[i];
+	}
+	return total;*/
+	return multiplyAndSumArrays( input, input );
+}
+
+function multiplyAndSumArrays( input1, input2 ){
+	var total = 0.0;
+	for( var i = 0; i < input1.length; i++ ){
+		total += input1[i] * input2[i];
+	}
+	return total;
+}
+
 function updateGuiInput(){
 
 	desiredDistanceFunction = document.getElementById('distanceSelect').value == "maximum" ? maximumDistWithId : 
-								( document.getElementById('distanceSelect').value == "manhattan" ? manhattanDistWithId : euclideanDistWithId );
+								( document.getElementById('distanceSelect').value == "manhattan" ? manhattanDistWithId : 
+								( document.getElementById('distanceSelect').value == "pearson" ? pearsonDistWithId : euclideanDistWithId ) );
 	
 	desiredLinkageFunction = document.getElementById('linkageSelect').value == "single" ? clusterfck.SINGLE_LINKAGE : 
 								( document.getElementById('linkageSelect').value == "complete" ? clusterfck.COMPLETE_LINKAGE : clusterfck.AVERAGE_LINKAGE );
+
+	rawData.minColor = rawData.pjs.color( parseInt( document.getElementById('colorLowR').value ), parseInt( document.getElementById('colorLowG').value ), parseInt( document.getElementById('colorLowB').value ) );
+	rawData.midColor = rawData.pjs.color( parseInt( document.getElementById('colorMidR').value ), parseInt( document.getElementById('colorMidG').value ), parseInt( document.getElementById('colorMidB').value ) );
+	rawData.maxColor = rawData.pjs.color( parseInt( document.getElementById('colorHighR').value ), parseInt( document.getElementById('colorHighG').value ), parseInt( document.getElementById('colorHighB').value ) );
 
 }
 

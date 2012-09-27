@@ -30,26 +30,32 @@ canvas{
 <b>File Upload/Download:</b></br>
 Upload data file: <input id="dataFileInput" type="file"></intput></br>
 Upload annotation File: <input id="annotationFileInput" type="file"></intput></br>
-Download as .png: <input type="button" id="dlbutton" onclick="downloadImg();" value="Download Image"></button></br>
+Download as .png: <input type="button" id="downloadButton" onclick="downloadImg();" value="Download Image"></button></br>
 </br></br>
 <b>Color Range:</b></br>
-Low:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R<input id="colorLowR" size="1"></input>, G<input id="colorLowG" size="1"></input>, B<input id="colorLowB" size="1"></input></br>
-Middle: R<input id="colorMiddleR" size="1"></input>, G<input id="colorMiddleG" size="1"></input>, B<input id="colorMiddleB" size="1"></input></br>
-High:&nbsp;&nbsp;&nbsp;&nbsp;R<input id="colorHighR" size="1"></input>, G<input id="colorHighG" size="1"></input>, B<input id="colorHighB" size="1"></input></br>
+Low:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" id="colorLowR" size="1"></input>, G<input class="gui" id="colorLowG" size="1"></input>, B<input class="gui" id="colorLowB" size="1"></input></br>
+Middle: R<input class="gui" id="colorMidR" size="1"></input>, G<input class="gui" id="colorMidG" size="1"></input>, B<input class="gui" id="colorMidB" size="1"></input></br>
+High:&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" id="colorHighR" size="1"></input>, G<input class="gui" id="colorHighG" size="1"></input>, B<input class="gui" id="colorHighB" size="1"></input></br>
 </br></br>
+<b>Value Range:</b><br>
+Minimum:&nbsp;&nbsp;<input class="gui" id="valueRangeMinInput" value="-1" size="5"></input></br>
+Middle:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input class="gui" id="valueRangeMidInput" value="0" size="5"></input></br>
+Maximum:&nbsp;<input class="gui" id="valueRangeMaxInput" value="1" size="5"></input></br>
+<input class="gui" type="button" id="autoSetValueRangeButton" value="Automatically adjust value range"></input></br></br>
 <b>Clustering:</b></br>
-Distance function: <select id="distanceSelect">
+Distance function: <select class="gui" id="distanceSelect">
 <option value="euclidean">Euclidean Distance</option>
 <option value="manhattan">Manhattan Distance</option>
 <option value="maximum">Maximum Distance</option>
+<option value="pearson">Pearson Correlation</option>
 </select></br>
-Linkage: <select id="linkageSelect">
+Linkage: <select class="gui" id="linkageSelect">
 <option value="single">Single Linkage</option>
 <option value="complete">Complete Linkage</option>
 <option value="average">Average Linkage</option>
 </select></br>
-<input type="button" id="enableClusterButton" value="Show Clustered Data"></input>
-<input type="button" id="disableClusterButton" value="Show Original Data"></input></br>
+<input class="gui" type="button" id="enableClusterButton" value="Show Clustered Data"></input>
+<input class="gui" type="button" id="disableClusterButton" value="Show Original Data"></input></br>
 <canvas id="canvas"></canvas>
 <div id="annotations"></div></br>
 
