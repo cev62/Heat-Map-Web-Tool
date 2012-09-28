@@ -2,6 +2,9 @@ var inputText;
 var rawData;
 var clusterfck;
 
+var dataFile;
+var annotationFile;
+
 var canvas;
 var annotationBox;
 
@@ -12,6 +15,7 @@ var showOriginalDataButton;
 
 var dataFileUploadInput;
 var annotationFileUploadInput;
+var loadFileButton;
 var downloadButton;
 
 var minColorInputR;
@@ -29,7 +33,6 @@ var midValueInput;
 var maxValueInput;
 var autoSetValueRangeButton;
 
-
 var desiredDistanceFunction;
 var desiredLinkageFunction;
 
@@ -38,7 +41,7 @@ function sketch( pjs ){
 	pjs.setup = function(){
 		
 		pjs.size( 0, 0 );
-		//pjs.background( 255, 255, 255 );
+		pjs.background( 255, 255, 255 );
 		pjs.noLoop();
 		inputText = pjs.loadStrings("HeatMap_Example.txt");
 		rawData = new DataSet( pjs );
@@ -152,11 +155,6 @@ function DataSet( pjs ){
 
 }
 
-DataSet.prototype.getValue = function( row, column ){ return this.data[row][column]; }
-DataSet.prototype.getData = function(){ return this.data; }
-DataSet.prototype.getAnnotationValue = function( row, column ){ return this.annotations[row][column]; }
-DataSet.prototype.getRowName = function( row ){ return this.rowNames[row]; }
-DataSet.prototype.getColumnName = function( column ){ return this.columnNames[column]; }
 DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn ){
 
 	if(  firstDataRow >= 1 && firstDataColumn >= 1 ){
@@ -321,7 +319,11 @@ function init( clusterfckHandle ){
 	showOriginalDataButton = document.getElementById('disableClusterButton');
 	
 	dataFileUploadInput = document.getElementById('dataFileInput');
+	dataFileUploadInput.addEventListener( 'change', handleDataFileSelect, false );
 	annotationFileUploadInput = document.getElementById('annotationFileInput');
+	annotationFileUploadInput.addEventListener( 'change', handleAnnotationFileSelect, false );
+	loadFileButton = document.getElementById('loadFilesButton');
+	loadFileButton.onclick = loadFiles;
 	downloadButton = document.getElementById('downloadButton');
 
 	minColorInputR = document.getElementById('colorLowR');
@@ -377,6 +379,30 @@ function init( clusterfckHandle ){
 	
 	rawData.draw();
 	
+}
+
+function loadFiles(){
+
+	console.log(dataFile);
+
+	
+
+}
+
+function handleDataFileSelect( evt ){
+	var reader = new FileReader();
+	reader.readAsText( evt.target.files[0] );
+	reader.onload = function(){
+		dataFile = reader.result;
+	};
+}
+
+function handleAnnotationFileSelect( evt ){
+	var reader = new FileReader();
+	reader.readAsText( evt.target.files[0] );
+	reader.onload = function(){
+		annotationFile = reader.result;
+	};
 }
 
 function downloadImg(){
