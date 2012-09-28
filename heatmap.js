@@ -43,29 +43,9 @@ function sketch( pjs ){
 		pjs.size( 0, 0 );
 		pjs.background( 255, 255, 255 );
 		pjs.noLoop();
-		inputText = pjs.loadStrings("HeatMap_Example.txt");
-		rawData = new DataSet( pjs );
-		rawData.initialize( parseInputData( inputText, '\t' ), 1, 2 );
-		rawData.autoSetRangeValues( 0.8 );
-		rawData.setStartCoord( 0, 50 );
-		//rawData.cluster();
-		console.log( rawData );
-		pjs.drawMap();
-
-	};
-	
-	pjs.drawMap = function(){
-
-		pjs.background( 255, 255, 255 );
-		rawData.drawHeatMap();
-		rawData.labelAxes();
 		
-	};
-	
-	pjs.draw = function(){
-	
-	
-	
+		rawData = new DataSet( pjs );
+
 	};
 	
 	pjs.mouseMoved = function(){
@@ -77,7 +57,7 @@ function sketch( pjs ){
 				if( (rawData.mouseRow != row || rawData.mouseColumn != column) && !rawData.holdMouse ){
 					rawData.mouseRow = row;
 					rawData.mouseColumn = column;
-					pjs.drawMap();
+					rawData.drawHeatMap();
 				}
 			}
 		}
@@ -95,31 +75,55 @@ function sketch( pjs ){
 
 }
 
-function parseInputData( input, delimiter ){
+function parseInputData( input, columnDelimiter, rowDelimeter ){
 
 	var output = [];
-
+	var tmp = [];
+	
+	var value = "";
+	var index = 0;
+	
 	for( var i = 0; i < input.length; i++ ){
+	
+		if( input[i] == rowDelimeter ){
+			
+			tmp[index] = value;
+			value = "";
+			index++;
+			
+		}
+		else{
+			value += input[i];
+		}
+	
+	}
+	if( value !== "" ){
+		tmp[index] = value;
+	}
+
+	for( i = 0; i < tmp.length; i++ ){
 		
 		output[i] = [];
 	
-		var value = "";
-		var cellIndex = 0;
+		value = "";
+		index = 0;
 	
-		for( var j = 0; j < input[i].length; j++ ){
+		for( var j = 0; j < tmp[i].length; j++ ){
 		
-			if( input[i].charAt(j) == delimiter ){
-				output[i][cellIndex] = value;
+			if( tmp[i].charAt(j) == columnDelimiter ){
+				output[i][index] = value;
 				value = "";
-				cellIndex++;
+				index++;
 			}
 			else{
-				value += input[i].charAt(j);
+				value += tmp[i].charAt(j);
 			}
 		
 		}
 		
-		output[i][cellIndex] = value;
+		if( value !== "" ){
+			output[i][index] = value;
+		}
 	
 	}
 	
@@ -136,13 +140,13 @@ function DataSet( pjs ){
 	this.annotations = [];
 	this.displayOrder = [];
 	
-	this.minColor = this.pjs.color( 255, 0, 0 );
-	this.midColor = this.pjs.color( 0,0,0 );
-	this.maxColor = this.pjs.color( 0,255,0 );
+	this.minColor = this.pjs.color( 0, 0, 0 );
+	this.midColor = this.pjs.color( 0, 0, 0 );
+	this.maxColor = this.pjs.color( 0, 0, 0 );
 
-	this.minRange = 0.0;
-	this.midRange = 5.0;
-	this.maxRange = 10.0;
+	this.minRange = -1.0;
+	this.midRange = 0.0;
+	this.maxRange = 1.0;
 	
 	this.startX = 0;
 	this.startY = 0;
@@ -253,9 +257,9 @@ DataSet.prototype.drawHeatMap = function(){
 		this.pjs.noStroke();
 		this.writeAnnotations();
 	}
+	this.labelAxes();
 }
 DataSet.prototype.writeAnnotations = function(){
-	//console.log("c: " + this.mouseColumn);
 	annotationBox.innerHTML = 'Row: ' + this.mouseRow + '</br>';
 	annotationBox.innerHTML += 'Column: ' + this.mouseColumn + '</br>';
 	annotationBox.innerHTML += 'Value: ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
@@ -263,16 +267,7 @@ DataSet.prototype.writeAnnotations = function(){
 	for( var i = 0; i < this.annotations[0].length; i++ ){
 		annotationBox.innerHTML += this.annotations[0][i] + ': ' + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
 	}
-
 }
-DataSet.prototype.draw = function(){
-
-	this.drawHeatMap();
-	this.writeAnnotations();
-	this.labelAxes();
-
-}
-
 DataSet.prototype.cluster = function(){
 
 	var input = [];
@@ -292,13 +287,11 @@ DataSet.prototype.cluster = function(){
 	}
 	
 }
-
 DataSet.prototype.unCluster = function(){
 	for( var i = 0; i < this.displayOrder.length; i++ ){
 		this.displayOrder[i] = i;
 	}
 }
-
 function doClusters( cluster, output ){
 	if( cluster.hasOwnProperty('left') ){
 		doClusters( cluster['left'], output );
@@ -375,20 +368,21 @@ function init( clusterfckHandle ){
 		
 	distanceSelect.onchange = updateGuiInput;
 	linkageSelect.onchange = updateGuiInput;
+		
 	updateGuiInput();
-	
-	rawData.draw();
-	
+		
 }
 
 function loadFiles(){
 
-	console.log(dataFile);
-
-	
+	updateGuiInput();
+	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2 );
+	rawData.autoSetRangeValues( 0.8 );
+	rawData.setStartCoord( 0, 50 );
+	console.log( rawData );
+	rawData.drawHeatMap();
 
 }
-
 function handleDataFileSelect( evt ){
 	var reader = new FileReader();
 	reader.readAsText( evt.target.files[0] );
@@ -396,7 +390,6 @@ function handleDataFileSelect( evt ){
 		dataFile = reader.result;
 	};
 }
-
 function handleAnnotationFileSelect( evt ){
 	var reader = new FileReader();
 	reader.readAsText( evt.target.files[0] );
@@ -404,7 +397,6 @@ function handleAnnotationFileSelect( evt ){
 		annotationFile = reader.result;
 	};
 }
-
 function downloadImg(){
 	var tmpr = rawData.mouseRow;
 	var tmpc = rawData.mouseColumn;
@@ -427,7 +419,6 @@ var euclideanDistWithId = function( input1, input2 ){
 	}
 	return Math.sqrt( output );
 };
-
 var manhattanDistWithId = function( input1, input2 ){
 	var output = 0.0;
 	for( var i = 1; i < input1.length; i++ ){
@@ -435,7 +426,6 @@ var manhattanDistWithId = function( input1, input2 ){
 	}
 	return output ;
 };
-
 var maximumDistWithId = function( input1, input2 ){
 	var output = 0.0;
 	for( var i = 1; i < input1.length; i++ ){
@@ -443,7 +433,6 @@ var maximumDistWithId = function( input1, input2 ){
 	}
 	return output;
 };
-
 var pearsonDistWithId = function ( input1In, input2In ){
 
 	var input1 = input1In.slice(1);
@@ -456,7 +445,6 @@ var pearsonDistWithId = function ( input1In, input2In ){
 	output = numerator / denominator;
 	return 1 / output;
 }
-
 function sumArray( input ){
 	var total = 0.0;
 	for( var i = 0; i < input.length; i++ ){
@@ -464,7 +452,6 @@ function sumArray( input ){
 	}
 	return total;
 }
-
 function sumArraySquared( input ){
 	/*var total = 0.0;
 	for( var i = 0; i < input.length; i++ ){
@@ -473,7 +460,6 @@ function sumArraySquared( input ){
 	return total;*/
 	return multiplyAndSumArrays( input, input );
 }
-
 function multiplyAndSumArrays( input1, input2 ){
 	var total = 0.0;
 	for( var i = 0; i < input1.length; i++ ){
