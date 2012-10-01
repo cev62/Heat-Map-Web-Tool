@@ -32,6 +32,7 @@ var minValueInput;
 var midValueInput;
 var maxValueInput;
 var autoSetValueRangeButton;
+var updateMapButton;
 
 var desiredDistanceFunction;
 var desiredLinkageFunction;
@@ -76,6 +77,9 @@ function sketch( pjs ){
 }
 
 function parseInputData( input, columnDelimiter, rowDelimeter ){
+
+	console.log(input);
+	if( !input ){ return ""; }
 
 	var output = [];
 	var tmp = [];
@@ -126,7 +130,7 @@ function parseInputData( input, columnDelimiter, rowDelimeter ){
 		}
 	
 	}
-	
+	console.log("parsed");
 	return output;
 
 }
@@ -153,13 +157,19 @@ function DataSet( pjs ){
 	this.cellWidth = 15;
 	this.cellHeight = 10;
 	
+	this.labelBufferX = 0;
+	this.labelBufferY = 0;
+	
 	this.mouseRow = 0;
 	this.mouseColumn = 0;
 	this.holdMouse = false;
 
 }
 
-DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn ){
+DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn, annotations ){
+console.log("init");
+	if( !values ){ return; }
+	console.log(annotations);
 
 	if(  firstDataRow >= 1 && firstDataColumn >= 1 ){
 		for( k = firstDataColumn; k < values[0].length; k++ ){
@@ -169,6 +179,11 @@ DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn )
 			this.annotations[k] = [];
 			for( var l = 0; l < firstDataColumn; l++ ){
 				this.annotations[k][l] = values[k][l].toString();
+			}
+			if( annotations ){
+				for( var m = 0; m < annotations.length; m++ ){
+				
+				}
 			}
 		}
 	}
@@ -199,10 +214,13 @@ DataSet.prototype.labelAxes = function(){
 	this.pjs.textFont( font, this.cellHeight );		
 	var numRows = this.data.length;
 	var numColumns = this.data[0].length;
-	for( var i = 0; i < numRows; i++ ){
+
+	
+	for( i = 0; i < numRows; i++ ){
 		this.pjs.text( this.annotations[ this.displayOrder[i] + 1 ][0], this.startX + numColumns * this.cellWidth + 1, this.startY + ( i + 1 ) * this.cellHeight );
 	}
 	this.pjs.textFont( font, this.cellWidth );
+	
 	for( var j = 0; j < numColumns; j++ ){
 		this.pjs.pushMatrix();
 		this.pjs.translate( ( j + 1 ) * this.cellWidth + this.startX, this.startY );
@@ -233,6 +251,35 @@ DataSet.prototype.setStartCoord = function( startXIn, startYIn ){
 DataSet.prototype.setCellSize = function( cellWidthIn, cellHeightIn ){
 	this.cellWidth = cellHeightIn; this.cellHeight = cellHeightIn; 
 }
+DataSet.prototype.setLabelBuffers = function(){
+
+	var numRows = this.data.length;
+	var numColumns = this.data[0].length;
+	var font = this.pjs.createFont( "Arial", this.data.cellHeight, true );	
+	this.pjs.textFont( font, this.cellHeight );		
+
+	var maxTextWidth = 0;
+	for( var i = 0; i < numRows; i++ ){
+		if( maxTextWidth < this.pjs.textWidth( this.annotations[i + 1][0] ) ){
+			maxTextWidth = this.pjs.textWidth( this.annotations[i + 1][0] );
+		}
+	}
+	this.labelBufferX = maxTextWidth + 2;
+	
+	this.pjs.textFont( font, this.cellWidth );
+	
+	maxTextWidth = 0;
+	for( i = 0; i < numColumns; i++ ){
+		if( maxTextWidth < this.pjs.textWidth( this.columnNames[i] ) ){
+			maxTextWidth = this.pjs.textWidth( this.columnNames[i] );
+		}
+	}
+	this.labelBufferY = maxTextWidth + 2;
+	this.startY = this.labelBufferY;
+	
+	this.pjs.size( numColumns * this.cellWidth + this.labelBufferX, numRows* this.cellHeight + this.labelBufferY );
+
+}
 DataSet.prototype.drawHeatMap = function(){
 
 	this.pjs.noStroke();
@@ -242,7 +289,7 @@ DataSet.prototype.drawHeatMap = function(){
 	var numRows = this.data.length;
 	var numColumns = this.data[0].length;
 	
-	this.pjs.size( numColumns * this.cellWidth + 100, numRows* this.cellHeight + 50 );
+	this.setLabelBuffers();
 	
 	for( var r = 0; r < numRows; r++ ){
 		for( var s = 0; s < numColumns; s++ ){
@@ -305,9 +352,13 @@ function doClusters( cluster, output ){
 }
 
 function init( clusterfckHandle ){
+
 	canvas = document.getElementById('canvas');	
 	annotationBox = document.getElementById('annotations');
 
+	var processingInstance = new Processing( canvas, sketch );
+	clusterfckLocal = clusterfckHandle;
+	
  	showClusteredDataButton = document.getElementById('enableClusterButton');
 	showOriginalDataButton = document.getElementById('disableClusterButton');
 	
@@ -342,6 +393,9 @@ function init( clusterfckHandle ){
 	midValueInput = document.getElementById('valueRangeMidInput');
 	maxValueInput = document.getElementById('valueRangeMaxInput');
 	autoSetValueRangeButton = document.getElementById('autoSetValueRangeButton');
+	autoSetValueRangeButton.onclick = autoAdjustRange;
+	updateMapButton = document.getElementById('updateMapButton');
+	updateMapButton.onclick = drawMap;
 
 	distanceSelect = document.getElementById('distanceSelect');
 	linkageSelect = document.getElementById('linkageSelect');
@@ -352,8 +406,6 @@ function init( clusterfckHandle ){
 	}
 	
 	
-	var processingInstance = new Processing( canvas, sketch );
-	clusterfckLocal = clusterfckHandle;
 	
 	document.getElementById('enableClusterButton').onclick = function(){ 
 		rawData.cluster();
@@ -373,14 +425,33 @@ function init( clusterfckHandle ){
 		
 }
 
+function drawMap(){
+
+	rawData.drawHeatMap();
+
+}
+
+function autoAdjustRange(){
+
+	updateGuiInput();
+	rawData.autoSetRangeValues( 0.8 );
+	minValueInput.value = rawData.minRange.toString();
+	midValueInput.value = rawData.midRange.toString();
+	maxValueInput.value = rawData.maxRange.toString();
+
+}
+
 function loadFiles(){
 
 	updateGuiInput();
-	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2 );
-	rawData.autoSetRangeValues( 0.8 );
+	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2, "" );
+	//rawData.autoSetRangeValues( 0.8 );
 	rawData.setStartCoord( 0, 50 );
 	console.log( rawData );
 	rawData.drawHeatMap();
+		console.log( dataFile );
+
+	console.log( parseInputData( annotationFile, ',', '\n' ) );
 
 }
 function handleDataFileSelect( evt ){
@@ -395,6 +466,7 @@ function handleAnnotationFileSelect( evt ){
 	reader.readAsText( evt.target.files[0] );
 	reader.onload = function(){
 		annotationFile = reader.result;
+		console.log( reader.result );
 	};
 }
 function downloadImg(){
@@ -481,5 +553,9 @@ function updateGuiInput(){
 	rawData.midColor = rawData.pjs.color( parseInt( document.getElementById('colorMidR').value ), parseInt( document.getElementById('colorMidG').value ), parseInt( document.getElementById('colorMidB').value ) );
 	rawData.maxColor = rawData.pjs.color( parseInt( document.getElementById('colorHighR').value ), parseInt( document.getElementById('colorHighG').value ), parseInt( document.getElementById('colorHighB').value ) );
 
+	rawData.minRange = parseFloat( minValueInput.value );
+	rawData.midRange = parseFloat( midValueInput.value );
+	rawData.maxRange = parseFloat( maxValueInput.value );
+	drawMap();
 }
 
