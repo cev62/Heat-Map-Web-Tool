@@ -76,61 +76,23 @@ function sketch( pjs ){
 
 }
 
-function parseInputData( input, columnDelimiter, rowDelimeter ){
+function parseInputData( input, columnDelimeter, rowDelimeter ){
 
-	console.log(input);
 	if( !input ){ return ""; }
-
-	var output = [];
-	var tmp = [];
 	
-	var value = "";
+	var tmp = input.split( rowDelimeter );
+	var output = [];
 	var index = 0;
 	
-	for( var i = 0; i < input.length; i++ ){
+	for( var i = 0; i < tmp.length; i++ ){
 	
-		if( input[i] == rowDelimeter ){
-			
-			tmp[index] = value;
-			value = "";
+		if( tmp[i] !== "" ){
+			output[index] = tmp[i].split( columnDelimeter );
 			index++;
-			
-		}
-		else{
-			value += input[i];
 		}
 	
 	}
-	if( value !== "" ){
-		tmp[index] = value;
-	}
-
-	for( i = 0; i < tmp.length; i++ ){
-		
-		output[i] = [];
 	
-		value = "";
-		index = 0;
-	
-		for( var j = 0; j < tmp[i].length; j++ ){
-		
-			if( tmp[i].charAt(j) == columnDelimiter ){
-				output[i][index] = value;
-				value = "";
-				index++;
-			}
-			else{
-				value += tmp[i].charAt(j);
-			}
-		
-		}
-		
-		if( value !== "" ){
-			output[i][index] = value;
-		}
-	
-	}
-	console.log("parsed");
 	return output;
 
 }
@@ -166,10 +128,9 @@ function DataSet( pjs ){
 
 }
 
-DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn, annotations ){
-console.log("init");
+DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn, annotFile ){
+
 	if( !values ){ return; }
-	console.log(annotations);
 
 	if(  firstDataRow >= 1 && firstDataColumn >= 1 ){
 		for( k = firstDataColumn; k < values[0].length; k++ ){
@@ -180,9 +141,15 @@ console.log("init");
 			for( var l = 0; l < firstDataColumn; l++ ){
 				this.annotations[k][l] = values[k][l].toString();
 			}
-			if( annotations ){
-				for( var m = 0; m < annotations.length; m++ ){
-				
+			if( annotFile ){
+				for( var m = 0; m < annotFile.length; m++ ){
+					var currID = annotFile[m][0];
+					if( currID == ( '"' + this.annotations[k][0] + '"' ) ){
+						for( var n = 1; n < annotFile[m].length; n++ ){
+							this.annotations[k].push( annotFile[m][n] );
+						}
+						break;
+					}
 				}
 			}
 		}
@@ -307,12 +274,12 @@ DataSet.prototype.drawHeatMap = function(){
 	this.labelAxes();
 }
 DataSet.prototype.writeAnnotations = function(){
-	annotationBox.innerHTML = 'Row: ' + this.mouseRow + '</br>';
-	annotationBox.innerHTML += 'Column: ' + this.mouseColumn + '</br>';
-	annotationBox.innerHTML += 'Value: ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
-	annotationBox.innerHTML += 'Sample Name: ' + this.columnNames[this.mouseColumn] + '</br>';
-	for( var i = 0; i < this.annotations[0].length; i++ ){
-		annotationBox.innerHTML += this.annotations[0][i] + ': ' + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
+	annotationBox.innerHTML = '<b>Row:</b> ' + this.mouseRow + '</br>';
+	annotationBox.innerHTML += '<b>Column:</b> ' + this.mouseColumn + '</br>';
+	annotationBox.innerHTML += '<b>Value:</b> ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
+	annotationBox.innerHTML += '<b>Sample Name:</b> ' + this.columnNames[this.mouseColumn] + '</br>';
+	for( var i = 0; i < this.annotations[this.displayOrder[this.mouseRow] + 1].length; i++ ){
+		annotationBox.innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '') + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
 	}
 }
 DataSet.prototype.cluster = function(){
@@ -444,14 +411,9 @@ function autoAdjustRange(){
 function loadFiles(){
 
 	updateGuiInput();
-	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2, "" );
-	//rawData.autoSetRangeValues( 0.8 );
-	rawData.setStartCoord( 0, 50 );
+	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2, parseInputData( annotationFile, ',', '\n' ) );
 	console.log( rawData );
 	rawData.drawHeatMap();
-		console.log( dataFile );
-
-	console.log( parseInputData( annotationFile, ',', '\n' ) );
 
 }
 function handleDataFileSelect( evt ){
@@ -466,7 +428,6 @@ function handleAnnotationFileSelect( evt ){
 	reader.readAsText( evt.target.files[0] );
 	reader.onload = function(){
 		annotationFile = reader.result;
-		console.log( reader.result );
 	};
 }
 function downloadImg(){
