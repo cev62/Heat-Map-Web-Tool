@@ -18,13 +18,14 @@ canvas{
 }
 #annotations{
 	border: 0px solid black;
-	width: 400px;
+	width: 300px;
 	height: 500px;
 	display: inline-block;
 	vertical-align: top;
 	overflow: scroll;
 	overflow-y: scroll;
 	overflow-x: scroll;
+	white-space: nowrap;
 }
 </style>
 
@@ -47,6 +48,9 @@ Middle:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input class="gui" id="valueRangeMidI
 Maximum:&nbsp;<input class="gui" id="valueRangeMaxInput" value="1" size="5"></input></br>
 <input class="gui" type="button" id="autoSetValueRangeButton" value="Automatically adjust value range"></input></br>
 <input class="gui" type="button" id="updateMapButton" value="Update Heat Map"></input></br></br>
+<b>Cell Size:</b></br>
+Width:&nbsp;&nbsp;<input class="gui" size="5" id="cellWidthInput"></input></br>
+Height:&nbsp;<input class="gui" size="5" id="cellHeightInput"></input></br></br>
 <b>Clustering:</b></br>
 Distance function: <select class="gui" id="distanceSelect">
 <option value="euclidean">Euclidean Distance</option>

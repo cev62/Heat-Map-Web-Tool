@@ -28,6 +28,9 @@ var maxColorInputR;
 var maxColorInputG;
 var maxColorInputB;
 
+var cellHeightInput;
+var cellWidthInput;
+
 var minValueInput;
 var midValueInput;
 var maxValueInput;
@@ -216,7 +219,7 @@ DataSet.prototype.setStartCoord = function( startXIn, startYIn ){
 	this.startX = startXIn; this.startY = startYIn; 
 }
 DataSet.prototype.setCellSize = function( cellWidthIn, cellHeightIn ){
-	this.cellWidth = cellHeightIn; this.cellHeight = cellHeightIn; 
+	this.cellWidth = cellWidthIn; this.cellHeight = cellHeightIn; 
 }
 DataSet.prototype.setLabelBuffers = function(){
 
@@ -356,6 +359,11 @@ function init( clusterfckHandle ){
 	maxColorInputB = document.getElementById('colorHighB');
 	maxColorInputB.value = '0';
 
+	cellWidthInput = document.getElementById('cellWidthInput');
+	cellWidthInput.value = '15';
+	cellHeightInput = document.getElementById('cellHeightInput');
+	cellHeightInput.value = '10';
+
 	minValueInput = document.getElementById('valueRangeMinInput');
 	midValueInput = document.getElementById('valueRangeMidInput');
 	maxValueInput = document.getElementById('valueRangeMaxInput');
@@ -400,11 +408,11 @@ function drawMap(){
 
 function autoAdjustRange(){
 
-	updateGuiInput();
 	rawData.autoSetRangeValues( 0.8 );
 	minValueInput.value = rawData.minRange.toString();
 	midValueInput.value = rawData.midRange.toString();
 	maxValueInput.value = rawData.maxRange.toString();
+	updateGuiInput();
 
 }
 
@@ -513,6 +521,8 @@ function updateGuiInput(){
 	rawData.minColor = rawData.pjs.color( parseInt( document.getElementById('colorLowR').value ), parseInt( document.getElementById('colorLowG').value ), parseInt( document.getElementById('colorLowB').value ) );
 	rawData.midColor = rawData.pjs.color( parseInt( document.getElementById('colorMidR').value ), parseInt( document.getElementById('colorMidG').value ), parseInt( document.getElementById('colorMidB').value ) );
 	rawData.maxColor = rawData.pjs.color( parseInt( document.getElementById('colorHighR').value ), parseInt( document.getElementById('colorHighG').value ), parseInt( document.getElementById('colorHighB').value ) );
+
+	rawData.setCellSize( parseInt( cellWidthInput.value ), parseInt( cellHeightInput.value ) )
 
 	rawData.minRange = parseFloat( minValueInput.value );
 	rawData.midRange = parseFloat( midValueInput.value );
