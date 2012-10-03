@@ -580,7 +580,7 @@ function updateGuiInput(){
 	rawData.labelColumns = labelColumnsInput.checked;
 	
 	rawData.labelOption = isNaN( parseInt( rowLabelSelect.value ) ) ? 0 : parseInt( rowLabelSelect.value );
-		console.log(minColorInput.value);
+
 	drawMap();
 	
 }
