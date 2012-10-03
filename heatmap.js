@@ -27,6 +27,10 @@ var maxColorInputR;
 var maxColorInputG;
 var maxColorInputB;
 
+var minColorInput;
+var midColorInput;
+var maxColorInput;
+
 var labelRowsInput;
 var labelColumnsInput;
 var rowLabelSelect;
@@ -384,6 +388,10 @@ function init( clusterfckHandle ){
 	maxColorInputG.value = '0';
 	maxColorInputB = document.getElementById('colorHighB');
 	maxColorInputB.value = '0';
+	
+	minColorInput = document.getElementById('minColorInput');
+	minColorInput = document.getElementById('midColorInput');
+	minColorInput = document.getElementById('maxColorInput');
 
 	cellWidthInput = document.getElementById('cellWidthInput');
 	cellWidthInput.value = '15';
@@ -572,7 +580,7 @@ function updateGuiInput(){
 	rawData.labelColumns = labelColumnsInput.checked;
 	
 	rawData.labelOption = isNaN( parseInt( rowLabelSelect.value ) ) ? 0 : parseInt( rowLabelSelect.value );
-		
+		console.log(minColorInput.value);
 	drawMap();
 	
 }
