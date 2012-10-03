@@ -15,7 +15,6 @@ var showOriginalDataButton;
 
 var dataFileUploadInput;
 var annotationFileUploadInput;
-var loadFileButton;
 var downloadButton;
 
 var minColorInputR;
@@ -259,6 +258,9 @@ DataSet.prototype.setLabelBuffers = function(){
 	if( !this.labelRows ){ this.labelBufferX = 0; }
 	if( !this.labelColumns ){ this.labelBufferY = 0; }
 	
+	if( this.labelBufferX > 100 ){ this.labelBufferX = 100; }
+	if( this.labelBufferY > 100 ){ this.labelBufferY = 100; }
+	
 	this.startY = this.labelBufferY;
 	
 	this.pjs.size( numColumns * this.cellWidth + this.labelBufferX, numRows* this.cellHeight + this.labelBufferY );
@@ -362,8 +364,6 @@ function init( clusterfckHandle ){
 	dataFileUploadInput.addEventListener( 'change', handleDataFileSelect, false );
 	annotationFileUploadInput = document.getElementById('annotationFileInput');
 	annotationFileUploadInput.addEventListener( 'change', handleAnnotationFileSelect, false );
-	loadFileButton = document.getElementById('loadFilesButton');
-	loadFileButton.onclick = loadFiles;
 	downloadButton = document.getElementById('downloadButton');
 
 	minColorInputR = document.getElementById('colorLowR');
@@ -456,6 +456,7 @@ function loadFiles(){
 
 	updateGuiInput();
 	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2, parseInputData( annotationFile, ',', '\n' ) );
+	autoAdjustRange();
 	console.log( rawData );
 	changeRowLabelOptions();
 	rawData.drawHeatMap();
@@ -466,6 +467,7 @@ function handleDataFileSelect( evt ){
 	reader.readAsText( evt.target.files[0] );
 	reader.onload = function(){
 		dataFile = reader.result;
+		loadFiles();
 	};
 }
 function handleAnnotationFileSelect( evt ){
@@ -473,6 +475,7 @@ function handleAnnotationFileSelect( evt ){
 	reader.readAsText( evt.target.files[0] );
 	reader.onload = function(){
 		annotationFile = reader.result;
+		loadFiles();
 	};
 }
 function downloadImg(){
@@ -567,14 +570,8 @@ function updateGuiInput(){
 	
 	rawData.labelRows = labelRowsInput.checked;
 	rawData.labelColumns = labelColumnsInput.checked;
-		
-	if( isNaN( parseInt( rowLabelSelect.value ) ) ){
-		rawData.labelOption = 0;
-	}
-	else{
-	rawData.labelOption = parseInt( rowLabelSelect.value );
-	}
-	console.log( rawData.labelOption );
+	
+	rawData.labelOption = isNaN( parseInt( rowLabelSelect.value ) ) ? 0 : parseInt( rowLabelSelect.value );
 		
 	drawMap();
 	
