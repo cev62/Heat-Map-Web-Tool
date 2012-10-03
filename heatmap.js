@@ -28,6 +28,10 @@ var maxColorInputR;
 var maxColorInputG;
 var maxColorInputB;
 
+var labelRowsInput;
+var labelColumnsInput;
+var rowLabelSelect;
+
 var cellHeightInput;
 var cellWidthInput;
 
@@ -35,7 +39,6 @@ var minValueInput;
 var midValueInput;
 var maxValueInput;
 var autoSetValueRangeButton;
-var updateMapButton;
 
 var desiredDistanceFunction;
 var desiredLinkageFunction;
@@ -109,6 +112,10 @@ function DataSet( pjs ){
 	this.annotations = [];
 	this.displayOrder = [];
 	
+	this.labelRows = true;
+	this.labelColumns = true;
+	this.labelOption = 0;
+	
 	this.minColor = this.pjs.color( 0, 0, 0 );
 	this.midColor = this.pjs.color( 0, 0, 0 );
 	this.maxColor = this.pjs.color( 0, 0, 0 );
@@ -181,22 +188,25 @@ DataSet.prototype.autoSetRangeValues = function( mult ){
 DataSet.prototype.labelAxes = function(){
 	this.pjs.fill( 0, 0, 0 );
 	var font = this.pjs.createFont( "Arial", this.data.cellHeight, true );
-	this.pjs.textFont( font, this.cellHeight );		
 	var numRows = this.data.length;
 	var numColumns = this.data[0].length;
-
-	
-	for( i = 0; i < numRows; i++ ){
-		this.pjs.text( this.annotations[ this.displayOrder[i] + 1 ][0], this.startX + numColumns * this.cellWidth + 1, this.startY + ( i + 1 ) * this.cellHeight );
+		
+	if( this.labelRows ){
+		this.pjs.textFont( font, this.cellHeight );		
+		for( i = 0; i < numRows; i++ ){
+			this.pjs.text( this.annotations[ this.displayOrder[i] + 1 ][this.labelOption], this.startX + numColumns * this.cellWidth + 1, this.startY + ( i + 1 ) * this.cellHeight );
+		}
 	}
-	this.pjs.textFont( font, this.cellWidth );
 	
-	for( var j = 0; j < numColumns; j++ ){
-		this.pjs.pushMatrix();
-		this.pjs.translate( ( j + 1 ) * this.cellWidth + this.startX, this.startY );
-		this.pjs.rotate( this.pjs.radians(270) );
-		this.pjs.text( this.columnNames[j], 0, 0 );
-		this.pjs.popMatrix();
+	if( this.labelColumns ){
+		this.pjs.textFont( font, this.cellWidth );
+		for( var j = 0; j < numColumns; j++ ){
+			this.pjs.pushMatrix();
+			this.pjs.translate( ( j + 1 ) * this.cellWidth + this.startX, this.startY );
+			this.pjs.rotate( this.pjs.radians(270) );
+			this.pjs.text( this.columnNames[j], 0, 0 );
+			this.pjs.popMatrix();
+		}
 	}
 }
 DataSet.prototype.setColorRange = function( minColorIn, midColorIn, maxColorIn ){
@@ -230,8 +240,8 @@ DataSet.prototype.setLabelBuffers = function(){
 
 	var maxTextWidth = 0;
 	for( var i = 0; i < numRows; i++ ){
-		if( maxTextWidth < this.pjs.textWidth( this.annotations[i + 1][0] ) ){
-			maxTextWidth = this.pjs.textWidth( this.annotations[i + 1][0] );
+		if( maxTextWidth < this.pjs.textWidth( this.annotations[i + 1][this.labelOption] ) ){
+			maxTextWidth = this.pjs.textWidth( this.annotations[i + 1][this.labelOption] );
 		}
 	}
 	this.labelBufferX = maxTextWidth + 2;
@@ -245,6 +255,10 @@ DataSet.prototype.setLabelBuffers = function(){
 		}
 	}
 	this.labelBufferY = maxTextWidth + 2;
+	
+	if( !this.labelRows ){ this.labelBufferX = 0; }
+	if( !this.labelColumns ){ this.labelBufferY = 0; }
+	
 	this.startY = this.labelBufferY;
 	
 	this.pjs.size( numColumns * this.cellWidth + this.labelBufferX, numRows* this.cellHeight + this.labelBufferY );
@@ -275,6 +289,7 @@ DataSet.prototype.drawHeatMap = function(){
 		this.writeAnnotations();
 	}
 	this.labelAxes();
+
 }
 DataSet.prototype.writeAnnotations = function(){
 	annotationBox.innerHTML = '<b>Row:</b> ' + this.mouseRow + '</br>';
@@ -284,6 +299,17 @@ DataSet.prototype.writeAnnotations = function(){
 	for( var i = 0; i < this.annotations[this.displayOrder[this.mouseRow] + 1].length; i++ ){
 		annotationBox.innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '') + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
 	}
+}
+DataSet.prototype.getRowLabelsHTML = function(){
+
+	var output = "";
+	if( !this.annotations[0] ){ return output; }
+	
+	for( var i = 0; i < this.annotations[0].length; i++ ){
+		output += '<option value="' + i.toString() + '">' + this.annotations[0][i] + '</option></br>';
+	}
+	return output;
+
 }
 DataSet.prototype.cluster = function(){
 
@@ -363,14 +389,18 @@ function init( clusterfckHandle ){
 	cellWidthInput.value = '15';
 	cellHeightInput = document.getElementById('cellHeightInput');
 	cellHeightInput.value = '10';
+	
+	labelRowsInput = document.getElementById('labelRowsInput');
+	labelRowsInput.checked = true;
+	labelColumnsInput = document.getElementById('labelColumnsInput');
+	labelColumnsInput.checked = true;
+	rowLabelSelect = document.getElementById('rowLabelSelect');
 
 	minValueInput = document.getElementById('valueRangeMinInput');
 	midValueInput = document.getElementById('valueRangeMidInput');
 	maxValueInput = document.getElementById('valueRangeMaxInput');
 	autoSetValueRangeButton = document.getElementById('autoSetValueRangeButton');
 	autoSetValueRangeButton.onclick = autoAdjustRange;
-	updateMapButton = document.getElementById('updateMapButton');
-	updateMapButton.onclick = drawMap;
 
 	distanceSelect = document.getElementById('distanceSelect');
 	linkageSelect = document.getElementById('linkageSelect');
@@ -416,11 +446,18 @@ function autoAdjustRange(){
 
 }
 
+function changeRowLabelOptions(){
+
+	rowLabelSelect.innerHTML = rawData.getRowLabelsHTML();
+
+}
+
 function loadFiles(){
 
 	updateGuiInput();
 	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2, parseInputData( annotationFile, ',', '\n' ) );
 	console.log( rawData );
+	changeRowLabelOptions();
 	rawData.drawHeatMap();
 
 }
@@ -527,6 +564,19 @@ function updateGuiInput(){
 	rawData.minRange = parseFloat( minValueInput.value );
 	rawData.midRange = parseFloat( midValueInput.value );
 	rawData.maxRange = parseFloat( maxValueInput.value );
+	
+	rawData.labelRows = labelRowsInput.checked;
+	rawData.labelColumns = labelColumnsInput.checked;
+		
+	if( isNaN( parseInt( rowLabelSelect.value ) ) ){
+		rawData.labelOption = 0;
+	}
+	else{
+	rawData.labelOption = parseInt( rowLabelSelect.value );
+	}
+	console.log( rawData.labelOption );
+		
 	drawMap();
+	
 }
 
