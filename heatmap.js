@@ -46,7 +46,7 @@ function sketch( pjs ){
 
 }
 
-function parseInputData( input, columnDelimeter, rowDelimeter ){
+function parseInputData( input, rowDelimeter, columnDelimeter ){
 
 	if( !input ){ return ""; }
 	
@@ -332,6 +332,13 @@ DataSet.prototype.unCluster = function(){
 	}
 }
 
+function filterInt( value ){
+
+	var val = parseInt( value );
+	return isNaN( val ) ? 0 : val;
+
+}
+
 function init( clusterfckHandle ){
 
 	var processingInstance = new Processing( document.getElementById('canvas'), sketch );
@@ -382,7 +389,16 @@ function changeRowLabelOptions(){
 function loadFiles(){
 
 	updateGuiInput();
-	rawData.initialize( parseInputData( dataFile, '\t', '\n' ), 1, 2, parseInputData( annotationFile, ',', '\n' ) );
+		
+	var drd = document.getElementById('dataRowDelimiterInput').value.replace( /\\n/g, "\n" ).replace( /\\t/g, "\t" );
+	var dcd = document.getElementById('dataColumnDelimiterInput').value.replace( /\\n/g, "\n" ).replace( /\\t/g, "\t" );
+	var ard = document.getElementById('annotationRowDelimiterInput').value.replace( /\\n/g, "\n" ).replace( /\\t/g, "\t" );
+	var acd = document.getElementById('annotationColumnDelimiterInput').value.replace( /\\n/g, "\n" ).replace( /\\t/g, "\t" );
+
+	var firstRow = isNaN( parseInt( document.getElementById('dataFirstRowInput').value ) ) ? 0 : parseInt( document.getElementById('dataFirstRowInput').value ) - 1 ;
+	var firstColumn = isNaN( parseInt( document.getElementById('dataFirstColumnInput').value ) ) ? 0 : parseInt( document.getElementById('dataFirstColumnInput').value ) - 1 ;
+
+	rawData.initialize( parseInputData( dataFile, drd, dcd ), firstRow, firstColumn, parseInputData( annotationFile, ard, acd ) );
 	autoAdjustRange();
 	console.log( rawData );
 	changeRowLabelOptions();
@@ -394,7 +410,7 @@ function handleDataFileSelect( evt ){
 	reader.readAsText( evt.target.files[0] );
 	reader.onload = function(){
 		dataFile = reader.result;
-		loadFiles();
+		//loadFiles();
 	};
 }
 function handleAnnotationFileSelect( evt ){
@@ -402,7 +418,7 @@ function handleAnnotationFileSelect( evt ){
 	reader.readAsText( evt.target.files[0] );
 	reader.onload = function(){
 		annotationFile = reader.result;
-		loadFiles();
+		//loadFiles();
 	};
 }
 function downloadImg(){

@@ -38,6 +38,10 @@ h1{
 	font: 16px arial;
 	font-weight: bold;
 }
+font.subSection{
+	font: 14px arial;
+	font-weight: bold;
+}
 body{
 	font: 14px arial;
 }
@@ -53,9 +57,16 @@ input[type="color"]{
 <div id="menu">
 
 <h1>File Upload/Download:</h1>
-Data:&nbsp;<input id="dataFileInput" type="file"></intput></br>
-Annotations:&nbsp;<input id="annotationFileInput" type="file"></intput></br>
-Download:&nbsp;<input type="button" id="downloadButton" onclick="downloadImg();" value="Download Image"></button></br></br>
+<font class="subSection">Data:</font>&nbsp;<input id="dataFileInput" type="file"></intput></br>
+&emsp;Row delimiter:&nbsp;<input class="gui" id="dataRowDelimiterInput" value="\n" size="1"></input></br>
+&emsp;Column delimiter:&nbsp;<input class="gui" id="dataColumnDelimiterInput" value="\t" size="1"></input></br>
+&emsp;First row of data:&nbsp;<input class="gui" id="dataFirstRowInput" value="2" size="1"></input></br>
+&emsp;First column of data:&nbsp;<input class="gui" id="dataFirstColumnInput" value="3" size="1"></input></br>
+<font class="subSection">Annotations:</font>&nbsp;<input id="annotationFileInput" type="file"></intput></br>
+&emsp;Row delimiter:&nbsp;<input class="gui" id="annotationRowDelimiterInput" value="\n" size="1"></input></br>
+&emsp;Column delimiter:&nbsp;<input class="gui" id="annotationColumnDelimiterInput" value="," size="1"></input></br>
+<font class="subSection">Upload:</font>&nbsp;<input type="button" id="uploadButton" onclick="loadFiles();" value="Upload Files"></button></br>
+<font class="subSection">Download:</font>&nbsp;<input type="button" id="downloadButton" onclick="downloadImg();" value="Download Image"></button></br></br>
 
 <h1>Color Range:</h1>
 Low:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" id="colorLowR" value="0" size="1"></input>, G<input class="gui" id="colorLowG" value="255" size="1"></input>, B<input class="gui" value="0" id="colorLowB" size="1"></input>
