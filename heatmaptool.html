@@ -18,7 +18,7 @@ canvas{
 	display: inline;
 	vertical-align: top;
 }
-#annotations{
+#annotationBox{
 	border: 0px solid black;
 	width: 300px;
 	height: 500px;
@@ -30,28 +30,20 @@ canvas{
 	white-space: nowrap;
 }
 #menu{
-
 	display: inline-block;
 	height: auto;
 	width: 400px;
-
 }
 h1{
-
 	font: 16px arial;
 	font-weight: bold;
-
 }
 body{
-
 	font: 14px arial;
-
 }
 input[type="color"]{
-
 	vertical-align: middle;
 	margin: 2px;
-
 }
 </style>
 
@@ -66,11 +58,11 @@ Annotations:&nbsp;<input id="annotationFileInput" type="file"></intput></br>
 Download:&nbsp;<input type="button" id="downloadButton" onclick="downloadImg();" value="Download Image"></button></br></br>
 
 <h1>Color Range:</h1>
-Low:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" id="colorLowR" size="1"></input>, G<input class="gui" id="colorLowG" size="1"></input>, B<input class="gui" id="colorLowB" size="1"></input>
+Low:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" id="colorLowR" value="0" size="1"></input>, G<input class="gui" id="colorLowG" value="255" size="1"></input>, B<input class="gui" value="0" id="colorLowB" size="1"></input>
 &nbsp;<input class="gui" type="color" id="lowColorInput"></input></br>
-Middle: R<input class="gui" id="colorMidR" size="1"></input>, G<input class="gui" id="colorMidG" size="1"></input>, B<input class="gui" id="colorMidB" size="1"></input>
+Middle: R<input class="gui" id="colorMidR" value="0" size="1"></input>, G<input class="gui" value="0" id="colorMidG" size="1"></input>, B<input class="gui" value="0" id="colorMidB" size="1"></input>
 &nbsp;<input class="gui" type="color" id="midColorInput"></input></br>
-High:&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" id="colorHighR" size="1"></input>, G<input class="gui" id="colorHighG" size="1"></input>, B<input class="gui" id="colorHighB" size="1"></input>
+High:&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" value="255" id="colorHighR" size="1"></input>, G<input class="gui" value="0" id="colorHighG" size="1"></input>, B<input class="gui" value="0" id="colorHighB" size="1"></input>
 &nbsp;<input class="gui" type="color" id="maxColorInput"></input></br></br>
 
 <h1>Value Range:</h1>
@@ -80,12 +72,12 @@ Maximum:&nbsp;<input class="gui" id="valueRangeMaxInput" value="1" size="5"></in
 <input class="gui" type="button" id="autoSetValueRangeButton" value="Automatically adjust value range"></input></br></br>
 
 <h1>Cell Size:</h1>
-Width:&nbsp;&nbsp;<input class="gui" size="5" id="cellWidthInput"></input></br>
-Height:&nbsp;<input class="gui" size="5" id="cellHeightInput"></input></br></br>
+Width:&nbsp;&nbsp;<input class="gui" value="15" size="5" id="cellWidthInput"></input></br>
+Height:&nbsp;<input class="gui" size="5" value="10" id="cellHeightInput"></input></br></br>
 
 <h1>Labels:</h1>
-<input type="checkbox" class="gui" id="labelRowsInput">Label Rows</input></br>
-<input type="checkbox" class="gui" id="labelColumnsInput">Label Columns</input></br>
+<input type="checkbox" class="gui" checked="true" id="labelRowsInput">Label Rows</input></br>
+<input type="checkbox" class="gui" checked="true" id="labelColumnsInput">Label Columns</input></br>
 Label rows by:&nbsp;<select id="rowLabelSelect" class="gui"></select></br></br>
 
 <h1>Clustering:</h1>
@@ -110,7 +102,7 @@ Linkage: <select class="gui" id="linkageSelect">
 <canvas id="canvas"></canvas>
 
 
-<div id="annotations"></div>
+<div id="annotationBox"></div>
 
 </body>
 </html>

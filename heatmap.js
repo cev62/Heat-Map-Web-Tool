@@ -1,47 +1,8 @@
-var inputText;
 var rawData;
 var clusterfck;
 
 var dataFile;
 var annotationFile;
-
-var canvas;
-var annotationBox;
-
-var distanceSelectInput;
-var linkageSelectInput;
-var showClusteredDataButton;
-var showOriginalDataButton;
-
-var dataFileUploadInput;
-var annotationFileUploadInput;
-var downloadButton;
-
-var minColorInputR;
-var minColorInputG;
-var minColorInputB;
-var midColorInputR;
-var midColorInputG;
-var midColorInputB;
-var maxColorInputR;
-var maxColorInputG;
-var maxColorInputB;
-
-var minColorInput;
-var midColorInput;
-var maxColorInput;
-
-var labelRowsInput;
-var labelColumnsInput;
-var rowLabelSelect;
-
-var cellHeightInput;
-var cellWidthInput;
-
-var minValueInput;
-var midValueInput;
-var maxValueInput;
-var autoSetValueRangeButton;
 
 var desiredDistanceFunction;
 var desiredLinkageFunction;
@@ -60,8 +21,8 @@ function sketch( pjs ){
 	
 	pjs.mouseMoved = function(){
 	
-		if( pjs.mouseX > rawData.startX && pjs.mouseX < rawData.startX + rawData.data[0].length * rawData.cellWidth ){
-			if( pjs.mouseY > rawData.startY && pjs.mouseY < rawData.startY + rawData.data.length * rawData.cellHeight ){
+		if( pjs.mouseX > rawData.startX && pjs.mouseX < rawData.startX + rawData.numColumns * rawData.cellWidth ){
+			if( pjs.mouseY > rawData.startY && pjs.mouseY < rawData.startY + rawData.numRows * rawData.cellHeight ){
 				row = Math.floor( ( pjs.mouseY - rawData.startY ) / rawData.cellHeight );
 				column = Math.floor( ( pjs.mouseX - rawData.startX ) / rawData.cellWidth );
 				if( (rawData.mouseRow != row || rawData.mouseColumn != column) && !rawData.holdMouse ){
@@ -109,6 +70,9 @@ function parseInputData( input, columnDelimeter, rowDelimeter ){
 function DataSet( pjs ){
 
 	this.pjs = pjs;
+	
+	this.numRows = 0;
+	this.numColumns = 0;
 
 	this.columnNames = [];
 	this.data = [];
@@ -174,18 +138,23 @@ DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn, 
 			this.displayOrder[ k - firstDataRow ] = k - firstDataRow;
 		}
 	}
+	
+	this.numRows = this.data.length;
+	this.numColumns = this.data[0].length;
 
 }
 DataSet.prototype.autoSetRangeValues = function( mult ){
 	var min = this.data[0][0];
 	var max = this.data[0][0];
+	var mid = 0.0;
 	for( var p = 0; p < this.data.length; p++ ){
 		for( var q = 0; q < this.data[0].length; q++ ){
 			min = this.data[p][q] < min ? this.data[p][q] : min;
 			max = this.data[p][q] > max ? this.data[p][q] : max;
+			mid += this.data[p][q];
 		}
 	}
-	var mid = ( min + max ) / 2;
+	mid = mid / ( p * q );
 	this.setValueRange( ( mid + ( min - mid ) * mult ), mid, ( mid + ( max - mid ) * mult ) );
 }
 DataSet.prototype.labelAxes = function(){
@@ -217,6 +186,9 @@ DataSet.prototype.setColorRange = function( minColorIn, midColorIn, maxColorIn )
 }
 DataSet.prototype.setValueRange = function( minRangeIn, midRangeIn, maxRangeIn ){
 	this.minRange = minRangeIn; this.midRange = midRangeIn; this.maxRange = maxRangeIn; 
+}
+DataSet.prototype.getValueRange = function(){
+	return [ this.minRange, this.midRange, this.maxRange ];
 }
 DataSet.prototype.getCellColor = function( value ){
 	if( value > this.midRange ){
@@ -298,13 +270,28 @@ DataSet.prototype.drawHeatMap = function(){
 
 }
 DataSet.prototype.writeAnnotations = function(){
-	annotationBox.innerHTML = '<b>Row:</b> ' + this.mouseRow + '</br>';
-	annotationBox.innerHTML += '<b>Column:</b> ' + this.mouseColumn + '</br>';
-	annotationBox.innerHTML += '<b>Value:</b> ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
-	annotationBox.innerHTML += '<b>Sample Name:</b> ' + this.columnNames[this.mouseColumn] + '</br>';
+	document.getElementById('annotationBox').innerHTML = '<b>Row:</b> ' + this.mouseRow + '</br>';
+	document.getElementById('annotationBox').innerHTML += '<b>Column:</b> ' + this.mouseColumn + '</br>';
+	document.getElementById('annotationBox').innerHTML += '<b>Value:</b> ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
+	document.getElementById('annotationBox').innerHTML += '<b>Sample Name:</b> ' + this.columnNames[this.mouseColumn] + '</br>';
 	for( var i = 0; i < this.annotations[this.displayOrder[this.mouseRow] + 1].length; i++ ){
-		annotationBox.innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '') + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
+		document.getElementById('annotationBox').innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '') + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
 	}
+}
+DataSet.prototype.getMouseRow = function(){
+	return this.mouseRow;
+}
+DataSet.prototype.getMouseColumn = function(){
+	return this.mouseColumn;
+}
+DataSet.prototype.setMouseRow = function( value ){
+	this.mouseRow = value;
+}
+DataSet.prototype.setMouseColumn = function( value ){
+	this.mouseColumn = value;
+}
+DataSet.prototype.setLabelOption = function( value ){
+	this.labelOption = value;
 }
 DataSet.prototype.getRowLabelsHTML = function(){
 
@@ -317,6 +304,10 @@ DataSet.prototype.getRowLabelsHTML = function(){
 	return output;
 
 }
+DataSet.prototype.setLabelingEnabled = function( rows, columns ){
+	this.labelRows = rows;
+	this.labelColumns = columns;
+}
 DataSet.prototype.cluster = function(){
 
 	var input = [];
@@ -328,7 +319,6 @@ DataSet.prototype.cluster = function(){
 		}
 	}
 	var clusters = clusterfck.hcluster( input, desiredDistanceFunction, desiredLinkageFunction )[0];
-	console.log(clusters);
 	var newData = [];
 	doClusters( clusters, newData );
 	for( var i = 0; i < this.displayOrder.length; i++ ){
@@ -341,98 +331,30 @@ DataSet.prototype.unCluster = function(){
 		this.displayOrder[i] = i;
 	}
 }
-function doClusters( cluster, output ){
-	if( cluster.hasOwnProperty('left') ){
-		doClusters( cluster['left'], output );
-	}
-	if( cluster.hasOwnProperty('right') ){
-		doClusters( cluster['right'], output );
-	}
-	else{
-		output[ output.length ] = cluster['canonical'];
-	}
-}
 
 function init( clusterfckHandle ){
 
-	canvas = document.getElementById('canvas');	
-	annotationBox = document.getElementById('annotations');
-
-	var processingInstance = new Processing( canvas, sketch );
+	var processingInstance = new Processing( document.getElementById('canvas'), sketch );
 	clusterfckLocal = clusterfckHandle;
 	
- 	showClusteredDataButton = document.getElementById('enableClusterButton');
-	showOriginalDataButton = document.getElementById('disableClusterButton');
-	
-	dataFileUploadInput = document.getElementById('dataFileInput');
-	dataFileUploadInput.addEventListener( 'change', handleDataFileSelect, false );
-	annotationFileUploadInput = document.getElementById('annotationFileInput');
-	annotationFileUploadInput.addEventListener( 'change', handleAnnotationFileSelect, false );
-	downloadButton = document.getElementById('downloadButton');
+	document.getElementById('dataFileInput').addEventListener( 'change', handleDataFileSelect, false );
+	document.getElementById('annotationFileInput').addEventListener( 'change', handleAnnotationFileSelect, false );
 
-	minColorInputR = document.getElementById('colorLowR');
-	minColorInputR.value = '0';
-	minColorInputG = document.getElementById('colorLowG');
-	minColorInputG.value = '255';
-	minColorInputB = document.getElementById('colorLowB');
-	minColorInputB.value = '0';
-	midColorInputR = document.getElementById('colorMidR');
-	midColorInputR.value = '0';
-	midColorInputG = document.getElementById('colorMidG');
-	midColorInputG.value = '0';
-	midColorInputB = document.getElementById('colorMidB');
-	midColorInputB.value = '0';
-	maxColorInputR = document.getElementById('colorHighR');
-	maxColorInputR.value = '255';
-	maxColorInputG = document.getElementById('colorHighG');
-	maxColorInputG.value = '0';
-	maxColorInputB = document.getElementById('colorHighB');
-	maxColorInputB.value = '0';
-	
-	minColorInput = document.getElementById('minColorInput');
-	minColorInput = document.getElementById('midColorInput');
-	minColorInput = document.getElementById('maxColorInput');
-
-	cellWidthInput = document.getElementById('cellWidthInput');
-	cellWidthInput.value = '15';
-	cellHeightInput = document.getElementById('cellHeightInput');
-	cellHeightInput.value = '10';
-	
-	labelRowsInput = document.getElementById('labelRowsInput');
-	labelRowsInput.checked = true;
-	labelColumnsInput = document.getElementById('labelColumnsInput');
-	labelColumnsInput.checked = true;
-	rowLabelSelect = document.getElementById('rowLabelSelect');
-
-	minValueInput = document.getElementById('valueRangeMinInput');
-	midValueInput = document.getElementById('valueRangeMidInput');
-	maxValueInput = document.getElementById('valueRangeMaxInput');
-	autoSetValueRangeButton = document.getElementById('autoSetValueRangeButton');
-	autoSetValueRangeButton.onclick = autoAdjustRange;
-
-	distanceSelect = document.getElementById('distanceSelect');
-	linkageSelect = document.getElementById('linkageSelect');
+	document.getElementById('autoSetValueRangeButton').onclick = autoAdjustRange;
 	
 	var guiElements = document.getElementsByClassName('gui');
 	for( var i = 0; i < guiElements.length; i++ ){
 		guiElements[i].onchange = updateGuiInput;
 	}
 	
-	
-	
 	document.getElementById('enableClusterButton').onclick = function(){ 
 		rawData.cluster();
 		rawData.drawHeatMap();
-		rawData.labelAxes(); 
 	};
 	document.getElementById('disableClusterButton').onclick = function(){ 
 		rawData.unCluster();
 		rawData.drawHeatMap();
-		rawData.labelAxes(); 
 	};
-		
-	distanceSelect.onchange = updateGuiInput;
-	linkageSelect.onchange = updateGuiInput;
 		
 	updateGuiInput();
 		
@@ -443,23 +365,20 @@ function drawMap(){
 	rawData.drawHeatMap();
 
 }
-
 function autoAdjustRange(){
 
 	rawData.autoSetRangeValues( 0.8 );
-	minValueInput.value = rawData.minRange.toString();
-	midValueInput.value = rawData.midRange.toString();
-	maxValueInput.value = rawData.maxRange.toString();
+	document.getElementById('valueRangeMinInput').value = rawData.getValueRange()[0];
+	document.getElementById('valueRangeMidInput').value = rawData.getValueRange()[1];
+	document.getElementById('valueRangeMaxInput').value = rawData.getValueRange()[2];
 	updateGuiInput();
 
 }
-
 function changeRowLabelOptions(){
 
 	rowLabelSelect.innerHTML = rawData.getRowLabelsHTML();
 
 }
-
 function loadFiles(){
 
 	updateGuiInput();
@@ -467,7 +386,7 @@ function loadFiles(){
 	autoAdjustRange();
 	console.log( rawData );
 	changeRowLabelOptions();
-	rawData.drawHeatMap();
+	drawMap();
 
 }
 function handleDataFileSelect( evt ){
@@ -487,20 +406,29 @@ function handleAnnotationFileSelect( evt ){
 	};
 }
 function downloadImg(){
-	var tmpr = rawData.mouseRow;
-	var tmpc = rawData.mouseColumn;
-	rawData.mouseRow = -1;
-	rawData.mouseColumn = -1;
+	var tmpr = rawData.getMouseRow();
+	var tmpc = rawData.getMouseColumn();
+	rawData.setMouseRow( -1 );
+	rawData.setMouseColumn( -1 );
 	rawData.drawHeatMap();
 	rawData.labelAxes();
-	rawData.mouseRow = tmpr;
-	rawData.mouseColumn = tmpc;
+	rawData.setMouseRow( tmpr );
+	rawData.setMouseColumn( tmpc );
 	
-	//window.open( rawData.pjs.save("test.png") );
-	//window.location.href = canvas.toDataURL();
 	window.open( canvas.toDataURL(), '_blank' );
 }
 
+function doClusters( cluster, output ){
+	if( cluster.hasOwnProperty('left') ){
+		doClusters( cluster['left'], output );
+	}
+	if( cluster.hasOwnProperty('right') ){
+		doClusters( cluster['right'], output );
+	}
+	else{
+		output[ output.length ] = cluster['canonical'];
+	}
+}
 var euclideanDistWithId = function( input1, input2 ){
 	var output = 0.0;
 	for( var i = 1; i < input1.length; i++ ){
@@ -542,11 +470,6 @@ function sumArray( input ){
 	return total;
 }
 function sumArraySquared( input ){
-	/*var total = 0.0;
-	for( var i = 0; i < input.length; i++ ){
-		total += input[i] * input[i];
-	}
-	return total;*/
 	return multiplyAndSumArrays( input, input );
 }
 function multiplyAndSumArrays( input1, input2 ){
@@ -566,22 +489,17 @@ function updateGuiInput(){
 	desiredLinkageFunction = document.getElementById('linkageSelect').value == "single" ? clusterfck.SINGLE_LINKAGE : 
 								( document.getElementById('linkageSelect').value == "complete" ? clusterfck.COMPLETE_LINKAGE : clusterfck.AVERAGE_LINKAGE );
 
-	rawData.minColor = rawData.pjs.color( parseInt( document.getElementById('colorLowR').value ), parseInt( document.getElementById('colorLowG').value ), parseInt( document.getElementById('colorLowB').value ) );
-	rawData.midColor = rawData.pjs.color( parseInt( document.getElementById('colorMidR').value ), parseInt( document.getElementById('colorMidG').value ), parseInt( document.getElementById('colorMidB').value ) );
-	rawData.maxColor = rawData.pjs.color( parseInt( document.getElementById('colorHighR').value ), parseInt( document.getElementById('colorHighG').value ), parseInt( document.getElementById('colorHighB').value ) );
+	var minColor = rawData.pjs.color( parseInt( document.getElementById('colorLowR').value ), parseInt( document.getElementById('colorLowG').value ), parseInt( document.getElementById('colorLowB').value ) );
+	var midColor = rawData.pjs.color( parseInt( document.getElementById('colorMidR').value ), parseInt( document.getElementById('colorMidG').value ), parseInt( document.getElementById('colorMidB').value ) );
+	var maxColor = rawData.pjs.color( parseInt( document.getElementById('colorHighR').value ), parseInt( document.getElementById('colorHighG').value ), parseInt( document.getElementById('colorHighB').value ) );
 
-	rawData.setCellSize( parseInt( cellWidthInput.value ), parseInt( cellHeightInput.value ) )
-
-	rawData.minRange = parseFloat( minValueInput.value );
-	rawData.midRange = parseFloat( midValueInput.value );
-	rawData.maxRange = parseFloat( maxValueInput.value );
+	rawData.setColorRange( minColor, midColor, maxColor );
+	rawData.setCellSize( parseInt( document.getElementById('cellWidthInput').value ), parseInt( document.getElementById('cellHeightInput').value ) );
+	rawData.setValueRange( parseFloat( document.getElementById('valueRangeMinInput').value ), parseFloat( document.getElementById('valueRangeMidInput').value ), parseFloat( document.getElementById('valueRangeMaxInput').value ) );
+	rawData.setLabelingEnabled( document.getElementById('labelRowsInput').checked, document.getElementById('labelColumnsInput').checked );
 	
-	rawData.labelRows = labelRowsInput.checked;
-	rawData.labelColumns = labelColumnsInput.checked;
-	
-	rawData.labelOption = isNaN( parseInt( rowLabelSelect.value ) ) ? 0 : parseInt( rowLabelSelect.value );
+	rawData.setLabelOption( isNaN( parseInt( document.getElementById('rowLabelSelect').value ) ) ? 0 : parseInt( document.getElementById('rowLabelSelect').value ) );
 
 	drawMap();
 	
 }
-
