@@ -76,6 +76,7 @@ function DataSet( pjs ){
 
 	this.columnNames = [];
 	this.data = [];
+	this.normalizedData = [];
 	this.annotations = [];
 	this.displayOrder = [];
 	
@@ -138,20 +139,22 @@ DataSet.prototype.initialize = function( values, firstDataRow, firstDataColumn, 
 			this.displayOrder[ k - firstDataRow ] = k - firstDataRow;
 		}
 	}
-	
+
 	this.numRows = this.data.length;
 	this.numColumns = this.data[0].length;
 
+	this.resetNormalizedData();
+
 }
 DataSet.prototype.autoSetRangeValues = function( mult ){
-	var min = this.data[0][0];
-	var max = this.data[0][0];
+	var min = this.normalizedData[0][0];
+	var max = this.normalizedData[0][0];
 	var mid = 0.0;
-	for( var p = 0; p < this.data.length; p++ ){
-		for( var q = 0; q < this.data[0].length; q++ ){
-			min = this.data[p][q] < min ? this.data[p][q] : min;
-			max = this.data[p][q] > max ? this.data[p][q] : max;
-			mid += this.data[p][q];
+	for( var p = 0; p < this.numRows; p++ ){
+		for( var q = 0; q < this.numColumns; q++ ){
+			min = this.normalizedData[p][q] < min ? this.normalizedData[p][q] : min;
+			max = this.normalizedData[p][q] > max ? this.normalizedData[p][q] : max;
+			mid += this.normalizedData[p][q];
 		}
 	}
 	mid = mid / ( p * q );
@@ -242,6 +245,44 @@ DataSet.prototype.setLabelBuffers = function(){
 	this.pjs.size( numColumns * this.cellWidth + this.labelBufferX, numRows* this.cellHeight + this.labelBufferY );
 
 }
+DataSet.prototype.resetNormalizedData = function(){
+
+	this.normalizedData = [];
+
+	for( var i = 0; i < this.data.length; i++ ){
+		this.normalizedData[i] = this.data[i].slice(0);
+
+	}
+
+}
+DataSet.prototype.normalizeRowsByStdDev = function(){
+
+	for( var i = 0; i < this.numRows; i++ ){
+	
+		var currStdDev = this.normalizedData[i].stdDev();
+		for( var j = 0; j < this.numColumns; j++ ){
+		
+			this.normalizedData[i][j] = this.normalizedData[i][j] / currStdDev;
+		
+		}
+	
+	}
+
+}
+DataSet.prototype.meanCenterRows = function(){
+
+	for( var i = 0; i < this.numRows; i++ ){
+	
+		var currMean = this.normalizedData[i].mean();
+		for( var j = 0; j < this.numColumns; j++ ){
+		
+			this.normalizedData[i][j] = this.normalizedData[i][j] - currMean;
+		
+		}
+	
+	}
+
+}
 DataSet.prototype.drawHeatMap = function(){
 
 	this.pjs.noStroke();
@@ -255,7 +296,7 @@ DataSet.prototype.drawHeatMap = function(){
 	
 	for( var r = 0; r < numRows; r++ ){
 		for( var s = 0; s < numColumns; s++ ){
-			this.pjs.fill( this.getCellColor( this.data[this.displayOrder[r]][s] ) );
+			this.pjs.fill( this.getCellColor( this.normalizedData[this.displayOrder[r]][s] ) );
 			this.pjs.rect( this.startX + s * this.cellWidth, this.startY + r * this.cellHeight, this.cellWidth, this.cellHeight );
 		}
 	}
@@ -272,7 +313,8 @@ DataSet.prototype.drawHeatMap = function(){
 DataSet.prototype.writeAnnotations = function(){
 	document.getElementById('annotationBox').innerHTML = '<b>Row:</b> ' + this.mouseRow + '</br>';
 	document.getElementById('annotationBox').innerHTML += '<b>Column:</b> ' + this.mouseColumn + '</br>';
-	document.getElementById('annotationBox').innerHTML += '<b>Value:</b> ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
+	document.getElementById('annotationBox').innerHTML += '<b>Raw Value:</b> ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
+	document.getElementById('annotationBox').innerHTML += '<b>Normalized Value:</b> ' + this.normalizedData[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
 	document.getElementById('annotationBox').innerHTML += '<b>Sample Name:</b> ' + this.columnNames[this.mouseColumn] + '</br>';
 	for( var i = 0; i < this.annotations[this.displayOrder[this.mouseRow] + 1].length; i++ ){
 		document.getElementById('annotationBox').innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '') + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
@@ -315,7 +357,7 @@ DataSet.prototype.cluster = function(){
 		input[i] = [];
 		input[i][0] = i;
 		for( var j = 1; j <= this.data[0].length; j++ ){
-			input[i][j] = this.data[i][j-1];
+			input[i][j] = this.normalizedData[i][j-1];
 		}
 	}
 	var clusters = clusterfck.hcluster( input, desiredDistanceFunction, desiredLinkageFunction )[0];
@@ -353,6 +395,10 @@ function init( clusterfckHandle ){
 	for( var i = 0; i < guiElements.length; i++ ){
 		guiElements[i].onchange = updateGuiInput;
 	}
+	
+	document.getElementById('stdDevNormalizationInput').onclick = function(){ rawData.normalizeRowsByStdDev( rawData.data.slice(0), rawData.normalizedData ); };
+	document.getElementById('centerRowsMeanInput').onclick = function(){ rawData.meanCenterRows( rawData.data.slice(0), rawData.normalizedData ); };
+	document.getElementById('unNormalizeInput').onclick = function(){ rawData.resetNormalizedData( rawData.data.slice(0), rawData.normalizedData ); };
 	
 	document.getElementById('enableClusterButton').onclick = function(){ 
 		rawData.cluster();

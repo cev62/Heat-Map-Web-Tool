@@ -5,6 +5,7 @@
 
 <script type="text/javascript" src="lib/processing-1.4.1.js" ></script>
 <script type="text/javascript" src="lib/clusterfck-0.1.js" ></script>
+<script type="text/javascript" src="lib/psMathStats.js" ></script>
 <script type="text/javascript" src="heatmap.js"></script>
 
 <style type="text/css">
@@ -101,7 +102,12 @@ Linkage: <select class="gui" id="linkageSelect">
 <option value="average">Average Linkage</option>
 </select></br>
 <input class="gui" type="button" id="enableClusterButton" value="Show Clustered Data"></input>
-<input class="gui" type="button" id="disableClusterButton" value="Show Original Data"></input></br>
+<input class="gui" type="button" id="disableClusterButton" value="Show Original Data"></input></br></br>
+
+<h1>Normalization:</h1>
+<input type="button" class="gui" id="stdDevNormalizationInput" value="Divide Rows by Standard Dev."></input></br>
+<input type="button" class="gui" id="centerRowsMeanInput" value="Center Rows by Mean"></input></br>
+<input type="button" class="gui" id="unNormalizeInput" value="Revert to Raw Data"></input></br>
 
 </div>
 
