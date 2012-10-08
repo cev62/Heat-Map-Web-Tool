@@ -7,6 +7,9 @@ var annotationFile;
 var desiredDistanceFunction;
 var desiredLinkageFunction;
 
+var desiredNormalizationCenter;
+var desiredNormalizationDivide;
+
 function sketch( pjs ){
 
 	pjs.setup = function(){
@@ -255,7 +258,7 @@ DataSet.prototype.resetNormalizedData = function(){
 	}
 
 }
-DataSet.prototype.normalizeRowsByStdDev = function(){
+DataSet.prototype.divideRowsByStdDev = function(){
 
 	for( var i = 0; i < this.numRows; i++ ){
 	
@@ -277,6 +280,20 @@ DataSet.prototype.meanCenterRows = function(){
 		for( var j = 0; j < this.numColumns; j++ ){
 		
 			this.normalizedData[i][j] = this.normalizedData[i][j] - currMean;
+		
+		}
+	
+	}
+
+}
+DataSet.prototype.medianCenterRows = function(){
+
+	for( var i = 0; i < this.numRows; i++ ){
+	
+		var currMedian = this.normalizedData[i].slice(0).median();
+		for( var j = 0; j < this.numColumns; j++ ){
+		
+			this.normalizedData[i][j] = this.normalizedData[i][j] - currMedian;
 		
 		}
 	
@@ -396,17 +413,39 @@ function init( clusterfckHandle ){
 		guiElements[i].onchange = updateGuiInput;
 	}
 	
-	document.getElementById('stdDevNormalizationInput').onclick = function(){ rawData.normalizeRowsByStdDev( rawData.data.slice(0), rawData.normalizedData ); };
-	document.getElementById('centerRowsMeanInput').onclick = function(){ rawData.meanCenterRows( rawData.data.slice(0), rawData.normalizedData ); };
-	document.getElementById('unNormalizeInput').onclick = function(){ rawData.resetNormalizedData( rawData.data.slice(0), rawData.normalizedData ); };
+	document.getElementById('normalizeInput').onclick = function(){ 
+		if( document.getElementById('normalizationCenterInput').value == "mean" ){
+			rawData.meanCenterRows();
+		}
+		if( document.getElementById('normalizationCenterInput').value == "median" ){
+			rawData.medianCenterRows();
+		}
+		
+		if( document.getElementById('normalizationDivideInput').value == "stdDev" ){
+			rawData.divideRowsByStdDev();
+		}
+		if( document.getElementById('normalizationDivideInput').value == "rms" ){
+			//rawData.divideRowsByRMS();
+		}
+	console.log(document.getElementById('normalizationCenterInput').value);
+	console.log(document.getElementById('normalizationDivideInput').value);
+		drawMap();
+	 
+	};
+	document.getElementById('unNormalizeInput').onclick = function(){
+	
+		rawData.resetNormalizedData();
+		drawMap();
+	
+	};
 	
 	document.getElementById('enableClusterButton').onclick = function(){ 
 		rawData.cluster();
-		rawData.drawHeatMap();
+		drawMap();
 	};
 	document.getElementById('disableClusterButton').onclick = function(){ 
 		rawData.unCluster();
-		rawData.drawHeatMap();
+		drawMap();
 	};
 		
 	updateGuiInput();
@@ -550,6 +589,9 @@ function updateGuiInput(){
 	
 	desiredLinkageFunction = document.getElementById('linkageSelect').value == "single" ? clusterfck.SINGLE_LINKAGE : 
 								( document.getElementById('linkageSelect').value == "complete" ? clusterfck.COMPLETE_LINKAGE : clusterfck.AVERAGE_LINKAGE );
+
+	desiredNormalizaionCenter = document.getElementById('normalizationCenterInput').value;
+	desiredNormalizaionDivide = document.getElementById('normalizationDivideInput').value;
 
 	var minColor = rawData.pjs.color( parseInt( document.getElementById('colorLowR').value ), parseInt( document.getElementById('colorLowG').value ), parseInt( document.getElementById('colorLowB').value ) );
 	var midColor = rawData.pjs.color( parseInt( document.getElementById('colorMidR').value ), parseInt( document.getElementById('colorMidG').value ), parseInt( document.getElementById('colorMidB').value ) );

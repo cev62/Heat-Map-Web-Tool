@@ -69,6 +69,35 @@ input[type="color"]{
 <font class="subSection">Upload:</font>&nbsp;<input type="button" id="uploadButton" onclick="loadFiles();" value="Upload Files"></button></br>
 <font class="subSection">Download:</font>&nbsp;<input type="button" id="downloadButton" onclick="downloadImg();" value="Download Image"></button></br></br>
 
+<h1>Clustering:</h1>
+Distance function: <select class="gui" id="distanceSelect">
+<option value="euclidean">Euclidean Distance</option>
+<option value="manhattan">Manhattan Distance</option>
+<option value="maximum">Maximum Distance</option>
+<option value="pearson">Pearson Correlation</option>
+</select></br>
+Linkage: <select class="gui" id="linkageSelect">
+<option value="single">Single Linkage</option>
+<option value="complete">Complete Linkage</option>
+<option value="average">Average Linkage</option>
+</select></br>
+<input class="gui" type="button" id="enableClusterButton" value="Show Clustered Data"></input>
+<input class="gui" type="button" id="disableClusterButton" value="Show Original Data"></input></br></br>
+
+<h1>Normalization:</h1>
+Center values by: <select class="gui" id="normalizationCenterInput">
+<option value="none">None</option>
+<option value="mean">Mean</option>
+<option value="median">Median</option>
+</select></br>
+Divide values by: <select class="gui" id="normalizationDivideInput">
+<option value="none">None</option>
+<option value="stdDev">Standard Dev.</option>
+<option value="rms">Root Mean Square</option>
+</select></br>
+<input type="button" class="gui" id="normalizeInput" value="Apply Normalization"></input>
+<input type="button" class="gui" id="unNormalizeInput" value="Revert to Raw Data"></input></br></br>
+
 <h1>Color Range:</h1>
 Low:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R<input class="gui" id="colorLowR" value="0" size="1"></input>, G<input class="gui" id="colorLowG" value="255" size="1"></input>, B<input class="gui" value="0" id="colorLowB" size="1"></input></br>
 Middle: R<input class="gui" id="colorMidR" value="0" size="1"></input>, G<input class="gui" value="0" id="colorMidG" size="1"></input>, B<input class="gui" value="0" id="colorMidB" size="1"></input></br>
@@ -87,27 +116,7 @@ Height:&nbsp;<input class="gui" size="5" value="10" id="cellHeightInput"></input
 <h1>Labels:</h1>
 <input type="checkbox" class="gui" checked="true" id="labelRowsInput">Label Rows</input></br>
 <input type="checkbox" class="gui" checked="true" id="labelColumnsInput">Label Columns</input></br>
-Label rows by:&nbsp;<select id="rowLabelSelect" class="gui"></select></br></br>
-
-<h1>Clustering:</h1>
-Distance function: <select class="gui" id="distanceSelect">
-<option value="euclidean">Euclidean Distance</option>
-<option value="manhattan">Manhattan Distance</option>
-<option value="maximum">Maximum Distance</option>
-<option value="pearson">Pearson Correlation</option>
-</select></br>
-Linkage: <select class="gui" id="linkageSelect">
-<option value="single">Single Linkage</option>
-<option value="complete">Complete Linkage</option>
-<option value="average">Average Linkage</option>
-</select></br>
-<input class="gui" type="button" id="enableClusterButton" value="Show Clustered Data"></input>
-<input class="gui" type="button" id="disableClusterButton" value="Show Original Data"></input></br></br>
-
-<h1>Normalization:</h1>
-<input type="button" class="gui" id="stdDevNormalizationInput" value="Divide Rows by Standard Dev."></input></br>
-<input type="button" class="gui" id="centerRowsMeanInput" value="Center Rows by Mean"></input></br>
-<input type="button" class="gui" id="unNormalizeInput" value="Revert to Raw Data"></input></br>
+Label rows by:&nbsp;<select id="rowLabelSelect" class="gui"></select></br>
 
 </div>
 
