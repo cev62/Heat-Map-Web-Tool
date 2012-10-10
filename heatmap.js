@@ -28,23 +28,59 @@ function sketch( pjs ){
 			if( pjs.mouseY > rawData.startY && pjs.mouseY < rawData.startY + rawData.numRows * rawData.cellHeight ){
 				row = Math.floor( ( pjs.mouseY - rawData.startY ) / rawData.cellHeight );
 				column = Math.floor( ( pjs.mouseX - rawData.startX ) / rawData.cellWidth );
-				if( (rawData.mouseRow != row || rawData.mouseColumn != column) && !rawData.holdMouse ){
-					rawData.mouseRow = row;
-					rawData.mouseColumn = column;
-					rawData.drawHeatMap();
+				if( (rawData.mouseRow != row || rawData.mouseColumn != column) ){
+					if( !rawData.holdMouse ){
+						rawData.mouseRow = row;
+						rawData.mouseColumn = column;
+						rawData.drawHeatMap();
+					}
 				}
 			}
 		}
-		
 	
 	};
+	
+	pjs.mouseDragged = function(){
+	
+		if( pjs.mouseX > rawData.startX && pjs.mouseX < rawData.startX + rawData.numColumns * rawData.cellWidth ){
+			if( pjs.mouseY > rawData.startY && pjs.mouseY < rawData.startY + rawData.numRows * rawData.cellHeight ){
+				row = Math.floor( ( pjs.mouseY - rawData.startY ) / rawData.cellHeight );
+				column = Math.floor( ( pjs.mouseX - rawData.startX ) / rawData.cellWidth );
+				if( (rawData.mouseRow != row || rawData.mouseColumn != column) ){
+						rawData.mouseRow = row;
+						rawData.mouseColumn = column;
+						rawData.drawHeatMap();
+				}
+			}
+		}
+	
+	}
 	
 	pjs.mousePressed = function(){
 		if( pjs.mouseX > rawData.startX && pjs.mouseX < rawData.startX + rawData.data[0].length * rawData.cellWidth ){
 			if( pjs.mouseY > rawData.startY && pjs.mouseY < rawData.startY + rawData.data.length * rawData.cellHeight ){
-				rawData.holdMouse = !rawData.holdMouse;
+				if( rawData.holdMouse ){
+					rawData.holdMouse = false;
+					rawData.dragSelect = false;
+				}
+				else{
+					rawData.dragSelect = true;
+					rawData.holdMouse = true;
+					rawData.mouseRow = Math.floor( ( pjs.mouseY - rawData.startY ) / rawData.cellHeight );
+					rawData.mouseColumn = Math.floor( ( pjs.mouseX - rawData.startX ) / rawData.cellWidth );
+					rawData.dragStartRow = rawData.mouseRow;
+					rawData.dragStartColumn = rawData.mouseColumn;
+				}
 			}
-		}
+		}				
+	};
+	
+	pjs.mouseReleased = function(){
+		if( pjs.mouseX > rawData.startX && pjs.mouseX < rawData.startX + rawData.data[0].length * rawData.cellWidth ){
+			if( pjs.mouseY > rawData.startY && pjs.mouseY < rawData.startY + rawData.data.length * rawData.cellHeight ){
+					rawData.dragSelect = false;
+			}
+		}				
 	};
 
 }
@@ -106,6 +142,9 @@ function DataSet( pjs ){
 	this.mouseRow = 0;
 	this.mouseColumn = 0;
 	this.holdMouse = false;
+	this.dragStartRow = 0;
+	this.dragStartColumn = 0;
+	this.dragSelect = false;
 
 }
 
@@ -320,7 +359,43 @@ DataSet.prototype.drawHeatMap = function(){
 	if( this.mouseRow >= 0 && this.mouseRow < numRows && this.mouseColumn >= 0 && this.mouseColumn < numColumns ){
 		this.pjs.noFill();
 		this.pjs.stroke(255);
-		this.pjs.rect( this.startX + this.mouseColumn * this.cellWidth, this.startY + this.mouseRow * this.cellHeight, this.cellWidth, this.cellHeight );
+		
+		if( !this.holdMouse ){
+			this.pjs.rect( this.startX + this.mouseColumn * this.cellWidth, this.startY + this.mouseRow * this.cellHeight, this.cellWidth, this.cellHeight );
+		}
+		else{
+			//this.pjs.rect( this.startX + this.dragStartColumn * this.cellWidth, this.startY + this.dragStartRow * this.cellHeight, this.startX + (this.mouseColumn - this.dragStartColumn ) * this.cellWidth, this.startY + ( this.mouseRow - this.dragStartWidth ) * this.cellHeight );
+			//this.pjs.rect( this.startX + this.mouseColumn * this.cellWidth, this.startY + this.mouseRow * this.cellHeight, this.cellWidth, this.cellHeight );
+			//this.pjs.rect( this.startX + this.dragStartColumn * this.cellWidth, this.startY + this.dragStartRow * this.cellHeight, this.cellWidth, this.cellHeight );
+		
+			var x, y, w, h;
+		
+			var flipx = this.dragStartColumn > this.mouseColumn;
+			var flipy = this.dragStartRow > this.mouseRow;
+			
+			x = this.startX + this.dragStartColumn * this.cellWidth;
+			y = this.startY + this.dragStartRow * this.cellHeight;
+			w = ( this.mouseColumn - this.dragStartColumn + 1 ) * this.cellWidth;
+			h = ( this.mouseRow - this.dragStartRow + 1 ) * this.cellHeight;
+
+			if( flipx ){
+			
+				x = this.startX + this.mouseColumn * this.cellWidth;
+				w = ( this.dragStartColumn - this.mouseColumn + 1 ) * this.cellWidth;
+			
+			}
+			
+			if( flipy ){
+			
+				y = this.startY + this.mouseRow * this.cellHeight;
+				h = ( this.dragStartRow - this.mouseRow + 1 ) * this.cellHeight;
+			
+			}
+
+			this.pjs.rect( x, y, w, h );
+		
+		}
+		
 		this.pjs.noStroke();
 		this.writeAnnotations();
 	}
@@ -328,14 +403,41 @@ DataSet.prototype.drawHeatMap = function(){
 
 }
 DataSet.prototype.writeAnnotations = function(){
-	document.getElementById('annotationBox').innerHTML = '<b>Row:</b> ' + this.mouseRow + '</br>';
-	document.getElementById('annotationBox').innerHTML += '<b>Column:</b> ' + this.mouseColumn + '</br>';
-	document.getElementById('annotationBox').innerHTML += '<b>Raw Value:</b> ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
-	document.getElementById('annotationBox').innerHTML += '<b>Normalized Value:</b> ' + this.normalizedData[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
-	document.getElementById('annotationBox').innerHTML += '<b>Sample Name:</b> ' + this.columnNames[this.mouseColumn] + '</br>';
-	for( var i = 0; i < this.annotations[this.displayOrder[this.mouseRow] + 1].length; i++ ){
-		document.getElementById('annotationBox').innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '') + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
+	
+	var start = this.mouseRow > this.dragStartRow ? this.dragStartRow : this.mouseRow;
+	var end = this.mouseRow < this.dragStartRow ? this.dragStartRow : this.mouseRow;
+	
+		document.getElementById('annotationBox').innerHTML = '<b>Row:</b> ' + this.mouseRow + '</br>';
+		document.getElementById('annotationBox').innerHTML += '<b>Column:</b> ' + this.mouseColumn + '</br>';
+		document.getElementById('annotationBox').innerHTML += '<b>Raw Value:</b> ' + this.data[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
+		document.getElementById('annotationBox').innerHTML += '<b>Normalized Value:</b> ' + this.normalizedData[this.displayOrder[this.mouseRow]][this.mouseColumn] + '</br>';
+		document.getElementById('annotationBox').innerHTML += '<b>Sample Name:</b> ' + this.columnNames[this.mouseColumn] + '</br>';
+		for( var i = 0; i < this.annotations[this.displayOrder[this.mouseRow] + 1].length; i++ ){
+			document.getElementById('annotationBox').innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '') + this.annotations[this.displayOrder[this.mouseRow] + 1][i] + '</br>';
+		}
+
+	if( this.holdMouse && ( end - start ) !== 0 ){
+		if( end - start  )
+		var strings = [];
+		
+		for( var j = 0; j < this.annotations[0].length; j++ ){
+			strings[j] = "";
+		}
+		
+		for( var i = 0; i <= (end - start); i++ ){
+			for( var j = 0; j < this.annotations[this.displayOrder[ start + i ] + 1].length; j++ ){
+				strings[j] += this.annotations[this.displayOrder[ start + i ] + 1][j] + " ";
+			}
+		}
+		
+		document.getElementById('annotationBox').innerHTML = "";
+		for( i = 0; i < strings.length; i++ ){
+			document.getElementById('annotationBox').innerHTML += ( this.annotations[0].length >= i ? ( '<b>' + this.annotations[0][i] + ':</b> ') : '')
+			document.getElementById('annotationBox').innerHTML += strings[i] + '</br>';
+		}
+	
 	}
+	
 }
 DataSet.prototype.getMouseRow = function(){
 	return this.mouseRow;
